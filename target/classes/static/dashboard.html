@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 中医方证速查与笔记系统</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            margin-top: 10px;
+            font-weight: normal;
+        }
+        .user-actions {
+            margin-top: 10px;
+        }
+        .btn-sm {
+            font-size: 0.9em;
+            padding: 5px 10px;
+            margin-left: 10px;
+        }
+        .content {
+            background-color: white;
+            border-radius: 5px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: 20px;
+        }
+        .sidebar {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+        .sidebar a {
+            display: block;
+            padding: 10px;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #e0f2e1;
+            color: #4CAF50;
+        }
+        .main-content {
+            min-height: 500px;
+        }
+        .user-info {
+            margin-bottom: 30px;
+        }
+        .user-info h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .user-info p {
+            margin: 5px 0;
+        }
+        .stats-box {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stat-card h4 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .stat-card .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .notes-list {
+            margin-top: 20px;
+        }
+        .note-item {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .note-item h4 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .note-item .date {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>中医方证速查与笔记系统</h1>
+            <p class="subtitle">传承经典，智慧学习</p>
+            <div id="userActions" class="user-actions">
+                <span id="userInfo">
+                    欢迎，<span id="username"></span>
+                    <a href="#" id="logoutBtn" class="btn btn-sm">退出</a>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="content">
+            <div class="dashboard-grid">
+                <div class="sidebar">
+                    <ul>
+                        <li><a href="#" class="active" data-section="overview">个人概览</a></li>
+                        <li><a href="#" data-section="notes">我的笔记</a></li>
+                        <li><a href="#" data-section="settings">账户设置</a></li>
+                        <li><a href="/index.html">返回首页</a></li>
+                    </ul>
+                </div>
+                <div class="main-content">
+                    <!-- 个人概览 -->
+                    <div id="overview-section" class="dashboard-section">
+                        <h2>个人概览</h2>
+                        <div class="user-info">
+                            <h3>账户信息</h3>
+                            <p><strong>用户名：</strong> <span id="profile-username"></span></p>
+                            <p><strong>邮箱：</strong> <span id="profile-email"></span></p>
+                            <p><strong>注册时间：</strong> <span id="profile-created"></span></p>
+                        </div>
+                        
+                        <h3>学习统计</h3>
+                        <div class="stats-box">
+                            <div class="stat-card">
+                                <h4>笔记总数</h4>
+                                <div class="number" id="notes-count">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <h4>学习天数</h4>
+                                <div class="number" id="study-days">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <h4>收藏条文</h4>
+                                <div class="number" id="favorites-count">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 我的笔记 -->
+                    <div id="notes-section" class="dashboard-section hidden">
+                        <h2>我的笔记</h2>
+                        <div class="notes-list" id="notes-container">
+                            <!-- 笔记列表将通过JavaScript动态加载 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 账户设置 -->
+                    <div id="settings-section" class="dashboard-section hidden">
+                        <h2>账户设置</h2>
+                        <form id="updateProfileForm">
+                            <div class="form-group">
+                                <label for="update-email">电子邮箱</label>
+                                <input type="email" id="update-email" name="email">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="update-password">新密码</label>
+                                <input type="password" id="update-password" name="password">
+                                <small>如不修改密码，请留空</small>
+                            </div>
+                            
+                            <button type="submit" class="btn">保存修改</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2023 中医方证速查与笔记系统 | 技术支持：Spring Boot + Angular</p>
+        </div>
+    </footer>
+
+    <script>
+        // 检查用户是否已登录
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const userInfo = localStorage.getItem('user');
+            
+            if (!token || !userInfo) {
+                // 未登录，重定向到登录页
+                window.location.href = '/login.html';
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // 加载用户信息
+        function loadUserInfo() {
+            if (!checkAuth()) return;
+            
+            try {
+                const user = JSON.parse(localStorage.getItem('user'));
+                document.getElementById('username').textContent = user.username;
+                document.getElementById('profile-username').textContent = user.username;
+                document.getElementById('profile-email').textContent = user.email || '未设置';
+                
+                // 格式化创建时间
+                const createdDate = user.createdAt ? new Date(user.createdAt) : new Date();
+                document.getElementById('profile-created').textContent = createdDate.toLocaleDateString();
+            } catch (e) {
+                console.error('解析用户信息失败:', e);
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login.html';
+            }
+        }
+        
+        // 加载用户统计信息
+        function loadUserStatistics() {
+            if (!checkAuth()) return;
+            
+            const token = localStorage.getItem('token');
+            
+            fetch('/users/me/statistics', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('获取统计信息失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('notes-count').textContent = data.notesCount || 0;
+                document.getElementById('study-days').textContent = data.studyDays || 0;
+                document.getElementById('favorites-count').textContent = data.favoritesCount || 0;
+            })
+            .catch(error => {
+                console.error('获取用户统计信息失败:', error);
+            });
+        }
+        
+        // 加载用户笔记
+        function loadUserNotes() {
+            if (!checkAuth()) return;
+            
+            const token = localStorage.getItem('token');
+            const notesContainer = document.getElementById('notes-container');
+            
+            // 清空容器
+            notesContainer.innerHTML = '<p>正在加载笔记...</p>';
+            
+            fetch('/notes?page=0&size=10', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('获取笔记失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                notesContainer.innerHTML = '';
+                
+                if (data.notes && data.notes.length > 0) {
+                    data.notes.forEach(note => {
+                        const noteDate = new Date(note.updatedAt || note.createdAt);
+                        const noteHtml = `
+                            <div class="note-item">
+                                <h4>${note.passage ? note.passage.title : '未知条文'}</h4>
+                                <div class="date">更新于: ${noteDate.toLocaleString()}</div>
+                                <p>${note.content}</p>
+                            </div>
+                        `;
+                        notesContainer.innerHTML += noteHtml;
+                    });
+                } else {
+                    notesContainer.innerHTML = '<p>暂无笔记记录。</p>';
+                }
+            })
+            .catch(error => {
+                console.error('获取用户笔记失败:', error);
+                notesContainer.innerHTML = '<p>获取笔记失败，请稍后再试。</p>';
+            });
+        }
+        
+        // 更新用户信息
+        document.getElementById('updateProfileForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!checkAuth()) return;
+            
+            const token = localStorage.getItem('token');
+            const email = document.getElementById('update-email').value;
+            const password = document.getElementById('update-password').value;
+            
+            // 构建请求体，只包含有值的字段
+            const updateData = {};
+            if (email) updateData.email = email;
+            if (password) updateData.password = password;
+            
+            fetch('/users/me', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('更新用户信息失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('用户信息更新成功');
+                
+                // 更新本地存储的用户信息
+                const user = JSON.parse(localStorage.getItem('user'));
+                if (email) user.email = email;
+                localStorage.setItem('user', JSON.stringify(user));
+                
+                // 重新加载用户信息
+                loadUserInfo();
+                
+                // 清空密码字段
+                document.getElementById('update-password').value = '';
+            })
+            .catch(error => {
+                console.error('更新用户信息失败:', error);
+                alert('更新用户信息失败，请稍后再试');
+            });
+        });
+        
+        // 退出登录
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/index.html';
+        });
+        
+        // 侧边栏导航
+        document.querySelectorAll('.sidebar a[data-section]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // 移除所有活动状态
+                document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 隐藏所有内容区域
+                document.querySelectorAll('.dashboard-section').forEach(section => {
+                    section.classList.add('hidden');
+                });
+                
+                // 显示选中的内容区域
+                const sectionId = this.getAttribute('data-section') + '-section';
+                document.getElementById(sectionId).classList.remove('hidden');
+                
+                // 如果是笔记部分，加载笔记
+                if (this.getAttribute('data-section') === 'notes') {
+                    loadUserNotes();
+                }
+            });
+        });
+        
+        // 页面加载时执行
+        document.addEventListener('DOMContentLoaded', function() {
+            if (checkAuth()) {
+                loadUserInfo();
+                loadUserStatistics();
+                
+                // 预填充更新表单
+                try {
+                    const user = JSON.parse(localStorage.getItem('user'));
+                    if (user.email) {
+                        document.getElementById('update-email').value = user.email;
+                    }
+                } catch (e) {
+                    console.error('解析用户信息失败:', e);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

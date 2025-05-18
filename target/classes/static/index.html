@@ -12,6 +12,14 @@
             background-color: #f5f5f5;
             color: #333;
         }
+        .user-actions {
+            margin-top: 10px;
+        }
+        .btn-sm {
+            font-size: 0.9em;
+            padding: 5px 10px;
+            margin-left: 10px;
+        }
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -95,6 +103,15 @@
         <div class="container">
             <h1>中医方证速查与笔记系统</h1>
             <p class="subtitle">传承经典，智慧学习</p>
+            <div id="userActions" class="user-actions">
+                <a href="/login.html" class="btn btn-sm" id="loginBtn">登录</a>
+                <a href="/register.html" class="btn btn-sm" id="registerBtn">注册</a>
+                <span id="userInfo" style="display:none;">
+                    欢迎，<span id="username"></span>
+                    <a href="/dashboard.html" class="btn btn-sm">个人中心</a>
+                    <a href="#" id="logoutBtn" class="btn btn-sm">退出</a>
+                </span>
+            </div>
         </div>
     </header>
 
@@ -142,6 +159,42 @@
                 document.getElementById('version').textContent = data.version || '1.0.0';
             })
             .catch(error => console.error('获取系统状态失败:', error));
+            
+        // 检查用户登录状态
+        function checkLoginStatus() {
+            const token = localStorage.getItem('token');
+            const userInfo = localStorage.getItem('user');
+            
+            if (token && userInfo) {
+                try {
+                    const user = JSON.parse(userInfo);
+                    document.getElementById('username').textContent = user.username;
+                    document.getElementById('userInfo').style.display = 'inline';
+                    document.getElementById('loginBtn').style.display = 'none';
+                    document.getElementById('registerBtn').style.display = 'none';
+                } catch (e) {
+                    console.error('解析用户信息失败:', e);
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                }
+            } else {
+                document.getElementById('userInfo').style.display = 'none';
+                document.getElementById('loginBtn').style.display = 'inline';
+                document.getElementById('registerBtn').style.display = 'inline';
+            }
+        }
+        
+        // 退出登录
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            checkLoginStatus();
+            alert('已成功退出登录');
+        });
+        
+        // 页面加载时检查登录状态
+        document.addEventListener('DOMContentLoaded', checkLoginStatus);
     </script>
 </body>
 </html>
