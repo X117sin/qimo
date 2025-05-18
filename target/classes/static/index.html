@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中医方证速查与笔记系统</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            margin-top: 10px;
+            font-weight: normal;
+        }
+        .content {
+            background-color: white;
+            border-radius: 5px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .feature-box {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .feature {
+            flex-basis: 30%;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .feature h3 {
+            color: #4CAF50;
+            margin-top: 0;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .status {
+            background-color: #e7f3e8;
+            border-left: 4px solid #4CAF50;
+            padding: 10px 15px;
+            margin-top: 20px;
+            border-radius: 0 4px 4px 0;
+        }
+        .status p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>中医方证速查与笔记系统</h1>
+            <p class="subtitle">传承经典，智慧学习</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="content">
+            <h2>欢迎使用中医方证速查与笔记系统</h2>
+            <p>本系统旨在帮助中医学习者和从业者快速查询中医方证知识，并提供个性化的笔记功能，助力中医知识的学习与传承。</p>
+            
+            <div class="status">
+                <p><strong>系统状态：</strong> <span id="status">运行中</span></p>
+                <p><strong>版本信息：</strong> <span id="version">1.0.0</span></p>
+            </div>
+
+            <div class="feature-box">
+                <div class="feature">
+                    <h3>方证速查</h3>
+                    <p>快速查询各类中医方证，包含经典条文、处方组成及临床应用。</p>
+                </div>
+                <div class="feature">
+                    <h3>个性化笔记</h3>
+                    <p>为每个条文添加个人理解和临床体会，构建个性化知识体系。</p>
+                </div>
+                <div class="feature">
+                    <h3>学习追踪</h3>
+                    <p>记录学习进度，标记重点难点，科学规划学习路径。</p>
+                </div>
+            </div>
+
+            <a href="/api/public/passages" class="btn">浏览条文库</a>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2023 中医方证速查与笔记系统 | 技术支持：Spring Boot + Angular</p>
+        </div>
+    </footer>
+
+    <script>
+        // 从API获取系统状态信息
+        fetch('/api')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('status').textContent = data.status || '运行中';
+                document.getElementById('version').textContent = data.version || '1.0.0';
+            })
+            .catch(error => console.error('获取系统状态失败:', error));
+    </script>
+</body>
+</html>
