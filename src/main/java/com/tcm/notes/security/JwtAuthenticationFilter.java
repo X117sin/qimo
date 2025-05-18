@@ -31,17 +31,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        // 跳过对公共API的处理
+        // 获取原始请求路径
         String requestPath = request.getRequestURI();
         // 获取应用上下文路径
         String contextPath = request.getContextPath();
+        
+        // 添加详细的调试日志
+        logger.info("原始请求路径: " + requestPath + ", 上下文路径: " + contextPath);
+        
         // 移除上下文路径前缀，以便正确匹配
         if (contextPath != null && !contextPath.isEmpty() && requestPath.startsWith(contextPath)) {
             requestPath = requestPath.substring(contextPath.length());
+            logger.info("移除上下文路径后的请求路径: " + requestPath);
         }
         
         // 跳过对公共资源的处理
         if (requestPath.startsWith("/public") || 
+            requestPath.startsWith("/api/public") || 
+            requestPath.equals("/api/public/passages") || // 明确添加这个路径
             requestPath.startsWith("/auth") || 
             requestPath.equals("/") || 
             requestPath.equals("/index.html") || 
@@ -51,12 +58,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             requestPath.startsWith("/js") || 
             requestPath.startsWith("/images") || 
             requestPath.equals("/favicon.ico")) {
+            logger.info("跳过认证的公共路径: " + requestPath);
             filterChain.doFilter(request, response);
             return;
         }
+        // 增加调试日志，输出所有请求头信息
+        java.util.Enumeration<String> headerNames = request.getHeaderNames();
+        StringBuilder headersLog = new StringBuilder("请求头信息: ");
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            headersLog.append(headerName).append(": ").append(request.getHeader(headerName)).append("; ");
+        }
+        logger.info(headersLog.toString());
         
         // 添加调试日志
-        logger.debug("处理请求: " + request.getRequestURI() + ", 处理后路径: " + requestPath);
+        logger.info("需要认证的请求: " + request.getRequestURI() + ", 处理后路径: " + requestPath);
         
         try {
             String jwt = getJwtFromRequest(request);

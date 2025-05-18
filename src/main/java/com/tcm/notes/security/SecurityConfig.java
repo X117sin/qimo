@@ -39,16 +39,20 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/public/**").permitAll()
-                // 允许访问静态资源，注意这里不需要/api前缀，因为Spring Security会自动处理context-path
-                .requestMatchers("/", "/index.html", "/login.html", "/register.html", "/dashboard.html", "/static/**", "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-                // 同时允许带有/api前缀的静态资源路径，解决context-path导致的404问题
-                .requestMatchers("/api", "/api/", "/api/index.html", "/api/login.html", "/api/register.html", "/api/dashboard.html", "/api/static/**", "/api/assets/**", "/api/css/**", "/api/js/**", "/api/images/**", "/api/favicon.ico").permitAll()
+                .requestMatchers("/api/public/**").permitAll()
+                // 明确允许访问passages接口
+                .requestMatchers("/api/public/passages").permitAll()
+                .requestMatchers("/api/public/passages/**").permitAll()
+                // 允许访问静态资源
+                .requestMatchers("/", "/index.html", "/login.html", "/register.html", "/dashboard.html", "/passages.html", "/static/**", "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                // 同时允许带有/api前缀的静态资源路径
+                .requestMatchers("/api", "/api/", "/api/index.html", "/api/login.html", "/api/register.html", "/api/dashboard.html", "/api/passages.html", "/api/static/**", "/api/assets/**", "/api/css/**", "/api/js/**", "/api/images/**", "/api/favicon.ico").permitAll()
                 .requestMatchers("/health").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             );
-            // 注意：由于在application.properties中设置了server.servlet.context-path=/api
-            // 需要同时配置带有/api前缀和不带前缀的路径
+            // 注意：在application.properties中设置了server.servlet.context-path=/
+            // 但我们仍然配置了带有/api前缀的路径，以确保所有可能的访问路径都能正确处理
 
         // 添加JWT过滤器
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

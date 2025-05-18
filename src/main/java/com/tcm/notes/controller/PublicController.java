@@ -24,14 +24,14 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 @Controller
-@RequestMapping({"/public", "/api", "/"})
+@RequestMapping("/api/public")
 public class PublicController {
 
     /**
      * 首页信息
      * @return 系统基本信息
      */
-    @GetMapping("/api")
+    @GetMapping("/info")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> apiInfo() {
         Map<String, Object> response = new HashMap<>();
@@ -42,10 +42,10 @@ public class PublicController {
     }
     
     /**
-     * 重定向根路径到index.html
+     * 重定向到首页
      * @return 重定向视图名
      */
-    @GetMapping({"/", ""})
+    @GetMapping("/home")
     public String home() {
         return "redirect:/index.html";
     }
