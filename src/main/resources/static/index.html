@@ -4,6 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>中医方证速查与笔记系统</title>
+    <script>
+        // 页面加载完成后检查管理员账号状态
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查是否存在管理员账号
+            fetch('/admin/check-admin')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.adminExists) {
+                        // 如果不存在管理员账号，重定向到管理员账号检查页面
+                        window.location.href = '/admin-check.html';
+                    }
+                    // 如果存在管理员账号，则保留在首页
+                })
+                .catch(error => {
+                    console.error('检查管理员账号状态失败:', error);
+                    // 出错时也保留在首页
+                });
+        });
+    </script>
     <style>
         body {
             font-family: 'Microsoft YaHei', sans-serif;
@@ -103,14 +122,13 @@
         <div class="container">
             <h1>中医方证速查与笔记系统</h1>
             <p class="subtitle">传承经典，智慧学习</p>
-            <div id="userActions" class="user-actions">
-                <a href="/login.html" class="btn btn-sm" id="loginBtn">登录</a>
-                <a href="/register.html" class="btn btn-sm" id="registerBtn">注册</a>
-                <span id="userInfo" style="display:none;">
-                    欢迎，<span id="username"></span>
-                    <a href="/dashboard.html" class="btn btn-sm">个人中心</a>
-                    <a href="#" id="logoutBtn" class="btn btn-sm">退出</a>
-                </span>
+            <div class="user-actions">
+                <span id="welcomeMessage">欢迎访问</span>
+                <a href="/login.html" class="btn-sm logged-out-only">登录</a>
+                <a href="/register.html" class="btn-sm logged-out-only">注册</a>
+                <a href="/dashboard.html" class="btn-sm logged-in-only" style="display: none;">个人中心</a>
+                <a href="/admin-dashboard.html" class="btn-sm admin-only" style="display: none;">管理后台</a>
+                <a href="#" id="logoutBtn" class="btn-sm logged-in-only" style="display: none;">退出登录</a>
             </div>
         </div>
     </header>
@@ -147,8 +165,11 @@
     <footer>
         <div class="container">
             <p>© 2023 中医方证速查与笔记系统 | 技术支持：Spring Boot + Angular</p>
+            <p><a href="/create-admin.html">创建管理员账号</a></p>
         </div>
     </footer>
+    
+    <script src="/js/auth-check.js"></script>
 
     <script>
         // 从API获取系统状态信息

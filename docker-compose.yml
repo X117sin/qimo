@@ -10,7 +10,7 @@ services:
       MYSQL_USER: tcm_user
       MYSQL_PASSWORD: tcm_password
     ports:
-      - "3306:3306"
+      - "13306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     networks:

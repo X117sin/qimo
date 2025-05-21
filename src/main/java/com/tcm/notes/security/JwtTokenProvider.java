@@ -46,6 +46,18 @@ public class JwtTokenProvider {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, username);
     }
+    
+    /**
+     * 根据用户ID和角色生成JWT令牌
+     * @param userId 用户ID
+     * @param role 用户角色
+     * @return JWT令牌
+     */
+    public String generateToken(String userId, String role) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
+        return createToken(claims, userId);
+    }
 
     /**
      * 创建令牌
@@ -120,6 +132,16 @@ public class JwtTokenProvider {
     private Boolean isTokenExpired(String token) {
         final Date expiration = getExpirationDateFromToken(token);
         return expiration.before(new Date());
+    }
+    
+    /**
+     * 从令牌中获取角色信息
+     * @param token JWT令牌
+     * @return 用户角色
+     */
+    public String getRoleFromToken(String token) {
+        Claims claims = getAllClaimsFromToken(token);
+        return claims.get("role", String.class);
     }
 
     /**

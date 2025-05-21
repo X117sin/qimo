@@ -23,6 +23,16 @@ import java.util.Map;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
+    /**
+     * 检查管理员权限
+     * 此端点仅供管理员访问，用于前端验证用户是否具有管理员权限
+     * @return 成功响应
+     */
+    @GetMapping("/check-auth")
+    public ResponseEntity<?> checkAdminAuth() {
+        return ResponseEntity.ok().body("管理员权限验证成功");
+    }
+
     @Autowired
     private UserRepository userRepository;
     
@@ -155,23 +165,24 @@ public class AdminController {
     }
 
     /**
-     * 创建新用户
-     * @param user 用户信息
-     * @return 创建的用户
-     */
-    @PostMapping("/users")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        // 检查用户名是否已存在
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            return ResponseEntity.badRequest().build();
-        }
-        
-        // 加密密码
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        
-        User savedUser = userRepository.save(user);
-        return ResponseEntity.ok(savedUser);
+ * 创建新用户
+ * @param user 用户信息
+ * @return 创建的用户
+ */
+@PostMapping("/users")
+@PreAuthorize("permitAll()")
+public ResponseEntity<User> createUser(@RequestBody User user) {
+    // 检查用户名是否已存在
+    if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+        return ResponseEntity.badRequest().build();
     }
+    
+    // 加密密码
+    user.setPassword(passwordEncoder.encode(user.getPassword()));
+    
+    User savedUser = userRepository.save(user);
+    return ResponseEntity.ok(savedUser);
+}
 
     /**
      * 创建新条文
@@ -201,5 +212,28 @@ public class AdminController {
         statistics.put("passageCount", passageCount);
         
         return ResponseEntity.ok(statistics);
+    }
+    
+    /**
+     * 检查是否存在管理员账号
+     * @return 是否存在管理员账号
+     */
+    @GetMapping("/check-admin")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Map<String, Object>> checkAdminExists() {
+        Map<String, Object> result = new HashMap<>();
+        
+        // 查询是否存在ADMIN角色的用户
+        java.util.List<User> adminUsers = userRepository.findByRole("ADMIN");
+        boolean adminExists = !adminUsers.isEmpty();
+        
+        result.put("adminExists", adminExists);
+        
+        // 如果存在管理员，返回管理员数量
+        if (adminExists) {
+            result.put("adminCount", adminUsers.size());
+        }
+        
+        return ResponseEntity.ok(result);
     }
 }

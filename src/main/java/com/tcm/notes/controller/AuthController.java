@@ -21,7 +21,7 @@ import java.util.Map;
  * 认证控制器，处理用户注册和登录
  */
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     @Autowired
@@ -68,35 +68,55 @@ public class AuthController {
     /**
      * 用户登录
      * @param loginRequest 登录请求
-     * @return 登录结果和JWT令牌
+     * @return JWT令牌
      */
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@RequestBody Map<String, String> loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
+    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
+        try {
+            // 检查请求参数
+            if (loginRequest == null || loginRequest.get("username") == null || loginRequest.get("password") == null) {
+                Map<String, String> response = new HashMap<>();
+                response.put("message", "用户名和密码不能为空");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            
+            // 验证用户名和密码
+            authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequest.get("username"),
-                        loginRequest.get("password")
+                    loginRequest.get("username"),
+                    loginRequest.get("password")
                 )
-        );
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtTokenProvider.generateToken(authentication);
-
-        // 获取用户信息
-        User user = userRepository.findByUsername(loginRequest.get("username")).orElseThrow();
-        UserDto userDto = new UserDto();
-        userDto.setId(user.getId());
-        userDto.setUsername(user.getUsername());
-        userDto.setEmail(user.getEmail());
-        userDto.setRole(user.getRole());
-        userDto.setCreatedAt(user.getCreatedAt());
-        userDto.setUpdatedAt(user.getUpdatedAt());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", jwt);
-        response.put("user", userDto);
-
-        return ResponseEntity.ok(response);
+            );
+            
+            // 获取用户信息
+            User user = userRepository.findByUsername(loginRequest.get("username"))
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+            
+            // 生成JWT令牌
+            String token = jwtTokenProvider.generateToken(user.getId().toString(), user.getRole());
+            
+            // 返回令牌和用户信息以及角色信息（用于前端根据角色跳转到不同页面）
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("user", user);
+            response.put("role", user.getRole());
+            
+            return ResponseEntity.ok(response);
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "用户名或密码错误");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        } catch (RuntimeException e) {
+            // 处理运行时异常
+            Map<String, String> response = new HashMap<>();
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e) {
+            // 处理所有其他类型的异常
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "登录过程中发生错误: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     /**

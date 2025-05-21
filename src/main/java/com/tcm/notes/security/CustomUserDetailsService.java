@@ -28,13 +28,37 @@ public class CustomUserDetailsService implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        System.out.println("正在加载用户: " + username);
+        
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("用户不存在: " + username));
+                .orElseThrow(() -> {
+                    System.out.println("用户不存在: " + username);
+                    return new UsernameNotFoundException("用户不存在: " + username);
+                });
+
+        System.out.println("成功加载用户: " + username + ", 角色: " + user.getRole());
+        
+        // 确保角色名称正确（必须是全大写的"ADMIN"）
+        if (user.getRole() != null) {
+            if (!user.getRole().equals(user.getRole().toUpperCase())) {
+                String originalRole = user.getRole();
+                String upperCaseRole = user.getRole().toUpperCase();
+                System.out.println("警告: 用户角色'" + originalRole + "'不是大写，自动转换为'" + upperCaseRole + "'");
+                user.setRole(upperCaseRole);
+                userRepository.save(user);
+                System.out.println("已将用户角色从'" + originalRole + "'更新为'" + upperCaseRole + "'");
+            }
+        } else {
+            System.out.println("错误: 用户" + username + "的角色为null");
+        }
+        
+        String roleWithPrefix = "ROLE_" + user.getRole();
+        System.out.println("授予权限: " + roleWithPrefix);
 
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
+                Collections.singletonList(new SimpleGrantedAuthority(roleWithPrefix))
         );
     }
 }

@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员后台 - 中医方证速查与笔记系统</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            margin-top: 10px;
+            font-weight: normal;
+        }
+        .user-actions {
+            margin-top: 10px;
+        }
+        .btn-sm {
+            font-size: 0.9em;
+            padding: 5px 10px;
+            margin-left: 10px;
+        }
+        .content {
+            background-color: white;
+            border-radius: 5px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: 20px;
+        }
+        .sidebar {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+        .sidebar a {
+            display: block;
+            padding: 10px;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #e0f2e1;
+            color: #4CAF50;
+        }
+        .main-content {
+            min-height: 500px;
+        }
+        .admin-section {
+            margin-bottom: 30px;
+        }
+        .admin-section h3 {
+            margin-top: 0;
+            color: #4CAF50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .stats-box {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stat-card h4 {
+            margin: 0;
+            color: #666;
+        }
+        .stat-card .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+            margin: 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination a {
+            color: #4CAF50;
+            padding: 8px 16px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            border: 1px solid #ddd;
+            margin: 0 4px;
+        }
+        .pagination a.active {
+            background-color: #4CAF50;
+            color: white;
+            border: 1px solid #4CAF50;
+        }
+        .pagination a:hover:not(.active) {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>中医方证速查与笔记系统</h1>
+            <p class="subtitle">管理员后台</p>
+            <div class="user-actions">
+                <span id="welcomeMessage">欢迎，管理员</span>
+                <a href="#" id="logoutBtn" class="btn-sm">退出登录</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="content">
+            <div class="dashboard-grid">
+                <div class="sidebar">
+                    <ul>
+                        <li><a href="#" class="active" data-section="dashboard">控制面板</a></li>
+                        <li><a href="#" data-section="users">用户管理</a></li>
+                        <li><a href="#" data-section="passages">条文管理</a></li>
+                        <li><a href="#" data-section="settings">系统设置</a></li>
+                        <li><a href="/index.html">返回前台</a></li>
+                    </ul>
+                </div>
+                <div class="main-content">
+                    <!-- 控制面板 -->
+                    <div id="dashboard-section" class="admin-section">
+                        <h3>系统概览</h3>
+                        <div class="stats-box">
+                            <div class="stat-card">
+                                <h4>用户总数</h4>
+                                <div class="number" id="userCount">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <h4>条文总数</h4>
+                                <div class="number" id="passageCount">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <h4>笔记总数</h4>
+                                <div class="number" id="noteCount">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 用户管理 -->
+                    <div id="users-section" class="admin-section" style="display: none;">
+                        <h3>用户管理</h3>
+                        <button id="addUserBtn" class="btn">添加用户</button>
+                        <table id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户名</th>
+                                    <th>邮箱</th>
+                                    <th>角色</th>
+                                    <th>注册时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 用户数据将通过JavaScript动态加载 -->
+                            </tbody>
+                        </table>
+                        <div class="pagination" id="usersPagination">
+                            <!-- 分页控件将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 条文管理 -->
+                    <div id="passages-section" class="admin-section" style="display: none;">
+                        <h3>条文管理</h3>
+                        <button id="addPassageBtn" class="btn">添加条文</button>
+                        <table id="passagesTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>标题</th>
+                                    <th>分类</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 条文数据将通过JavaScript动态加载 -->
+                            </tbody>
+                        </table>
+                        <div class="pagination" id="passagesPagination">
+                            <!-- 分页控件将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 系统设置 -->
+                    <div id="settings-section" class="admin-section" style="display: none;">
+                        <h3>系统设置</h3>
+                        <p>此功能正在开发中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2023 中医方证速查与笔记系统 | 技术支持：Spring Boot + Angular</p>
+        </div>
+    </footer>
+
+    <script>
+        // 管理员权限校验，页面加载时执行
+        (function checkAdminAuth() {
+            const token = localStorage.getItem('token');
+            const userJson = localStorage.getItem('user');
+            let user = null;
+            try {
+                user = userJson ? JSON.parse(userJson) : null;
+                console.log('解析的用户信息:', user);
+            } catch (e) {
+                console.error('解析用户信息失败:', e);
+                user = null;
+            }
+            
+            // 检查token是否存在
+            if (!token) {
+                console.error('未找到token，重定向到登录页面');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                alert('无权限访问该页面，请使用管理员账号登录！');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            // 检查user对象是否存在
+            if (!user) {
+                console.error('未找到用户信息，重定向到登录页面');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                alert('无权限访问该页面，请使用管理员账号登录！');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            // 检查用户角色
+            console.log('当前用户角色:', user.role);
+            if (user.role !== 'ADMIN') {
+                console.error('用户角色不是ADMIN:', user.role);
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                alert('无权限访问该页面，请使用管理员账号登录！');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            // 解析JWT令牌（仅用于调试）
+            try {
+                const tokenParts = token.split('.');
+                if (tokenParts.length === 3) {
+                    const payload = JSON.parse(atob(tokenParts[1]));
+                    console.log('JWT令牌解析结果:', payload);
+                    console.log('JWT中的角色:', payload.role);
+                    
+                    // 检查JWT中的角色是否存在
+                    if (!payload.role) {
+                        console.error('错误: JWT中不包含角色信息');
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        alert('登录信息不完整，请重新登录！');
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    
+                    // 确保角色大小写一致（转为大写进行比较）
+                    const jwtRole = payload.role.toUpperCase();
+                    const localRole = user.role.toUpperCase();
+                    
+                    console.log('JWT角色(大写):', jwtRole);
+                    console.log('localStorage角色(大写):', localRole);
+                    
+                    // 检查JWT中的角色是否与localStorage中的一致（忽略大小写）
+                    if (jwtRole !== localRole) {
+                        console.warn('警告: JWT中的角色与localStorage中的不一致');
+                        console.warn('JWT角色:', payload.role);
+                        console.warn('localStorage角色:', user.role);
+                        
+                        // 更新localStorage中的角色为JWT中的角色（保持大写）
+                        user.role = jwtRole;
+                        localStorage.setItem('user', JSON.stringify(user));
+                        console.log('已更新localStorage中的角色为:', jwtRole);
+                    }
+                    
+                    // 确保user.role是大写的ADMIN
+                    if (user.role !== 'ADMIN') {
+                        if (user.role.toUpperCase() === 'ADMIN') {
+                            user.role = 'ADMIN';
+                            localStorage.setItem('user', JSON.stringify(user));
+                            console.log('已将localStorage中的角色更正为大写ADMIN');
+                        } else {
+                            console.error('用户角色不是ADMIN:', user.role);
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
+                            alert('无权限访问该页面，请使用管理员账号登录！');
+                            window.location.href = '/login.html';
+                            return;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('解析JWT令牌失败:', e);
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                alert('登录信息无效，请重新登录！');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            console.log('管理员权限验证通过');
+            
+            // 更新欢迎消息
+            document.getElementById('welcomeMessage').textContent = `欢迎，${user.username}`;
+            
+            // 加载统计数据
+            loadStatistics();
+        })();
+        // 页面加载时执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查用户是否登录以及是否具有管理员角色
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            if (!token) {
+                // 未登录，重定向到登录页面
+                alert('请先登录');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            if (user.role !== 'ADMIN') {
+                // 不是管理员，重定向到登录页面
+                alert('您没有管理员权限');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            // 设置全局的请求拦截器，确保每个请求都带上Authorization头
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options = {}) {
+                // 确保每次请求都获取最新的token
+                const currentToken = localStorage.getItem('token');
+                
+                // 如果没有设置headers，则创建一个新的headers对象
+                if (!options.headers) {
+                    options.headers = {};
+                }
+                
+                // 如果headers是Headers对象，转换为普通对象
+                if (options.headers instanceof Headers) {
+                    const originalHeaders = options.headers;
+                    options.headers = {};
+                    for (const [key, value] of originalHeaders.entries()) {
+                        options.headers[key] = value;
+                    }
+                }
+                
+                // 添加Authorization头
+                if (currentToken && !options.headers['Authorization']) {
+                    options.headers['Authorization'] = `Bearer ${currentToken}`;
+                    console.log('已添加Authorization头：', `Bearer ${currentToken.substring(0, 10)}...`);
+                }
+                
+                return originalFetch(url, options);
+            };
+            
+            // 注意：loadStatistics()已移至checkAdminAuth()成功回调中执行
+            
+            // 侧边栏导航切换
+            document.querySelectorAll('.sidebar a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // 移除所有活动状态
+                    document.querySelectorAll('.sidebar a').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    
+                    // 添加当前活动状态
+                    this.classList.add('active');
+                    
+                    // 隐藏所有内容区域
+                    document.querySelectorAll('.admin-section').forEach(section => {
+                        section.style.display = 'none';
+                    });
+                    
+                    // 显示选中的内容区域
+                    const sectionId = this.getAttribute('data-section') + '-section';
+                    document.getElementById(sectionId).style.display = 'block';
+                    
+                    // 如果是用户管理，加载用户列表
+                    if (this.getAttribute('data-section') === 'users') {
+                        loadUsers(0);
+                    }
+                    
+                    // 如果是条文管理，加载条文列表
+                    if (this.getAttribute('data-section') === 'passages') {
+                        loadPassages(0);
+                    }
+                });
+            });
+            
+            // 退出登录
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login.html';
+            });
+        });
+        
+        // 检查用户是否已登录且是管理员
+        function checkAdminAuth() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            if (!token || user.role !== 'ADMIN') {
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            // 验证管理员权限
+            fetch('/admin/check-auth', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.error('管理员权限验证失败');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login.html';
+                    return;
+                }
+                console.log('管理员权限验证成功');
+                // 更新欢迎消息
+                document.getElementById('welcomeMessage').textContent = `欢迎，${user.username}`;
+                // 加载统计数据
+                loadStatistics();
+            })
+            .catch(error => {
+                console.error('权限验证错误:', error);
+                window.location.href = '/login.html';
+            });
+        }
+        
+        // 加载统计数据
+        function loadStatistics() {
+            const token = localStorage.getItem('token');
+            
+            // 检查令牌是否存在
+            if (!token) {
+                console.error('未找到认证令牌，请重新登录');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            console.log('发送请求前的令牌：', token);
+            
+            fetch('/admin/statistics', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('获取统计数据失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('userCount').textContent = data.userCount || 0;
+                document.getElementById('passageCount').textContent = data.passageCount || 0;
+                document.getElementById('noteCount').textContent = data.noteCount || 0;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        // 加载用户列表
+        function loadUsers(page) {
+            const token = localStorage.getItem('token');
+            
+            fetch(`/admin/users?page=${page}&size=10`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('获取用户列表失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const tableBody = document.querySelector('#usersTable tbody');
+                tableBody.innerHTML = '';
+                
+                data.content.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.username}</td>
+                        <td>${user.email || '-'}</td>
+                        <td>${user.role}</td>
+                        <td>${new Date(user.createdAt).toLocaleString()}</td>
+                        <td>
+                            <button class="btn btn-warning edit-user" data-id="${user.id}">编辑</button>
+                            <button class="btn btn-danger delete-user" data-id="${user.id}">删除</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+                // 生成分页控件
+                generatePagination('usersPagination', data.totalPages, page, loadUsers);
+                
+                // 添加编辑和删除用户的事件监听器
+                addUserEventListeners();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        // 加载条文列表
+        function loadPassages(page) {
+            const token = localStorage.getItem('token');
+            
+            fetch(`/admin/passages?page=${page}&size=10`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('获取条文列表失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const tableBody = document.querySelector('#passagesTable tbody');
+                tableBody.innerHTML = '';
+                
+                data.content.forEach(passage => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${passage.id}</td>
+                        <td>${passage.title}</td>
+                        <td>${passage.category || '-'}</td>
+                        <td>${new Date(passage.createdAt).toLocaleString()}</td>
+                        <td>
+                            <button class="btn btn-warning edit-passage" data-id="${passage.id}">编辑</button>
+                            <button class="btn btn-danger delete-passage" data-id="${passage.id}">删除</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+                // 生成分页控件
+                generatePagination('passagesPagination', data.totalPages, page, loadPassages);
+                
+                // 添加编辑和删除条文的事件监听器
+                addPassageEventListeners();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        // 生成分页控件
+        function generatePagination(containerId, totalPages, currentPage, callback) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            // 上一页
+            const prevLink = document.createElement('a');
+            prevLink.href = '#';
+            prevLink.textContent = '上一页';
+            prevLink.classList.add(currentPage === 0 ? 'disabled' : '');
+            prevLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (currentPage > 0) {
+                    callback(currentPage - 1);
+                }
+            });
+            container.appendChild(prevLink);
+            
+            // 页码
+            for (let i = 0; i < totalPages; i++) {
+                if (totalPages > 7 && i > 1 && i < totalPages - 2 && Math.abs(i - currentPage) > 1) {
+                    // 如果页数太多，只显示当前页附近的页码
+                    if (i === 2 && currentPage > 3) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.textContent = '...';
+                        ellipsis.style.padding = '8px 16px';
+                        container.appendChild(ellipsis);
+                    }
+                    continue;
+                }
+                
+                const pageLink = document.createElement('a');
+                pageLink.href = '#';
+                pageLink.textContent = i + 1;
+                if (i === currentPage) {
+                    pageLink.classList.add('active');
+                }
+                pageLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    callback(i);
+                });
+                container.appendChild(pageLink);
+                
+                if (totalPages > 7 && i === totalPages - 3 && currentPage < totalPages - 4) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.textContent = '...';
+                    ellipsis.style.padding = '8px 16px';
+                    container.appendChild(ellipsis);
+                }
+            }
+            
+            // 下一页
+            const nextLink = document.createElement('a');
+            nextLink.href = '#';
+            nextLink.textContent = '下一页';
+            nextLink.classList.add(currentPage === totalPages - 1 ? 'disabled' : '');
+            nextLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (currentPage < totalPages - 1) {
+                    callback(currentPage + 1);
+                }
+            });
+            container.appendChild(nextLink);
+        }
+        
+        // 添加用户相关的事件监听器
+        function addUserEventListeners() {
+            // 编辑用户
+            document.querySelectorAll('.edit-user').forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-id');
+                    alert('编辑用户功能正在开发中...');
+                    // TODO: 实现编辑用户功能
+                });
+            });
+            
+            // 删除用户
+            document.querySelectorAll('.delete-user').forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-id');
+                    if (confirm('确定要删除此用户吗？此操作不可撤销。')) {
+                        deleteUser(userId);
+                    }
+                });
+            });
+            
+            // 添加用户
+            document.getElementById('addUserBtn').addEventListener('click', function() {
+                alert('添加用户功能正在开发中...');
+                // TODO: 实现添加用户功能
+            });
+        }
+        
+        // 添加条文相关的事件监听器
+        function addPassageEventListeners() {
+            // 编辑条文
+            document.querySelectorAll('.edit-passage').forEach(button => {
+                button.addEventListener('click', function() {
+                    const passageId = this.getAttribute('data-id');
+                    alert('编辑条文功能正在开发中...');
+                    // TODO: 实现编辑条文功能
+                });
+            });
+            
+            // 删除条文
+            document.querySelectorAll('.delete-passage').forEach(button => {
+                button.addEventListener('click', function() {
+                    const passageId = this.getAttribute('data-id');
+                    if (confirm('确定要删除此条文吗？此操作不可撤销。')) {
+                        deletePassage(passageId);
+                    }
+                });
+            });
+            
+            // 添加条文
+            document.getElementById('addPassageBtn').addEventListener('click', function() {
+                alert('添加条文功能正在开发中...');
+                // TODO: 实现添加条文功能
+            });
+        }
+        
+        // 删除用户
+        function deleteUser(userId) {
+            const token = localStorage.getItem('token');
+            
+            fetch(`/admin/users/${userId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('删除用户失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.deleted) {
+                    alert('用户已成功删除');
+                    // 重新加载用户列表
+                    loadUsers(0);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('删除用户失败：' + error.message);
+            });
+        }
+        
+        // 删除条文
+        function deletePassage(passageId) {
+            const token = localStorage.getItem('token');
+            
+            fetch(`/admin/passages/${passageId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('删除条文失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.deleted) {
+                    alert('条文已成功删除');
+                    // 重新加载条文列表
+                    loadPassages(0);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('删除条文失败：' + error.message);
+            });
+        }
+    </script>
+</body>
+</html>

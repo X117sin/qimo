@@ -38,13 +38,21 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/public/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
                 // 明确允许访问passages接口
                 .requestMatchers("/api/public/passages").permitAll()
                 .requestMatchers("/api/public/passages/**").permitAll()
+                // 允许访问管理员用户创建接口
+                .requestMatchers("/admin/users").permitAll()
                 // 允许访问静态资源
-                .requestMatchers("/", "/index.html", "/login.html", "/register.html", "/dashboard.html", "/passages.html", "/static/**", "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                .requestMatchers("/", "/index.html", "/login.html", "/register.html", "/passages.html", "/create-admin.html", "/admin-check.html", "/static/**", "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                // 管理员页面和用户中心页面先允许访问静态资源，权限控制由前端和API请求时进行
+                .requestMatchers("/admin-dashboard.html", "/dashboard.html").permitAll()
+                // API请求时进行权限控制
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/user/**").authenticated()
                 // 同时允许带有/api前缀的静态资源路径
                 .requestMatchers("/api", "/api/", "/api/index.html", "/api/login.html", "/api/register.html", "/api/dashboard.html", "/api/passages.html", "/api/static/**", "/api/assets/**", "/api/css/**", "/api/js/**", "/api/images/**", "/api/favicon.ico").permitAll()
                 .requestMatchers("/health").permitAll()

@@ -52,6 +52,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             requestPath.startsWith("/auth") || 
             requestPath.equals("/") || 
             requestPath.equals("/index.html") || 
+            requestPath.equals("/login.html") || 
+            requestPath.equals("/register.html") || 
+            requestPath.equals("/passages.html") || 
+            requestPath.equals("/create-admin.html") || 
+            requestPath.equals("/admin-check.html") || 
+            requestPath.equals("/admin-dashboard.html") || // 允许访问管理员仪表盘页面
+            requestPath.equals("/dashboard.html") || // 允许访问用户仪表盘页面
             requestPath.startsWith("/static") || 
             requestPath.startsWith("/assets") || 
             requestPath.startsWith("/css") || 
@@ -79,14 +86,45 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (StringUtils.hasText(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
                 String username = jwtTokenProvider.getUsernameFromToken(jwt);
+                
+                // 添加JWT令牌解析日志
+                logger.info("从JWT令牌中解析出用户名: " + username);
+                
+                // 添加JWT令牌内容日志
+                try {
+                    String role = jwtTokenProvider.getRoleFromToken(jwt);
+                    logger.info("从JWT令牌中解析出角色: " + role);
+                    
+                    // 检查角色是否为null或空
+                    if (role == null || role.isEmpty()) {
+                        logger.warn("警告: JWT令牌中的角色为空，这可能导致权限验证失败");
+                    }
+                    
+                    // 检查角色大小写
+                    if (role != null && !role.equals(role.toUpperCase())) {
+                        logger.warn("警告: JWT令牌中的角色不是全大写: '" + role + "'，应为: '" + role.toUpperCase() + "'");
+                    }
+                } catch (Exception e) {
+                    logger.error("从JWT令牌中解析角色失败: " + e.getMessage());
+                }
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                
+                // 添加用户详情日志
+                logger.info("加载的用户详情: 用户名=" + userDetails.getUsername() + ", 角色=" + userDetails.getAuthorities());
+                
                 if (jwtTokenProvider.validateToken(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                    
+                    // 添加认证成功日志
+                    logger.info("用户认证成功: " + username + ", 权限: " + userDetails.getAuthorities());
+                } else {
+                    // 添加令牌验证失败日志
+                    logger.warn("JWT令牌验证失败: " + username);
                 }
             }
         } catch (Exception ex) {
@@ -103,9 +141,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
+        logger.info("Authorization头: " + bearerToken);
+        
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+            String token = bearerToken.substring(7);
+            logger.info("提取的JWT令牌: " + token.substring(0, Math.min(10, token.length())) + "...");
+            return token;
         }
+        
+        // 尝试从Cookie中获取令牌
+        jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (jakarta.servlet.http.Cookie cookie : cookies) {
+                if ("token".equals(cookie.getName())) {
+                    logger.info("从Cookie中提取令牌");
+                    return cookie.getValue();
+                }
+            }
+        }
+        
+        logger.info("未找到JWT令牌");
         return null;
     }
 }

@@ -4,6 +4,7 @@ import com.tcm.notes.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -39,4 +40,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return 是否存在
      */
     boolean existsByEmail(String email);
+    
+    /**
+     * 根据角色查找用户列表
+     * @param role 角色
+     * @return 用户列表
+     */
+    List<User> findByRole(String role);
 }
