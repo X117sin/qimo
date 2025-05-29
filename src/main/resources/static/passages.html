@@ -203,13 +203,12 @@
             <h1>中医方证速查与笔记系统</h1>
             <p class="subtitle">传承经典，智慧学习</p>
             <div id="userActions" class="user-actions">
-                <a href="/login.html" class="btn btn-sm" id="loginBtn">登录</a>
-                <a href="/register.html" class="btn btn-sm" id="registerBtn">注册</a>
-                <span id="userInfo" style="display:none;">
-                    欢迎，<span id="username"></span>
-                    <a href="/dashboard.html" class="btn btn-sm">个人中心</a>
-                    <a href="#" id="logoutBtn" class="btn btn-sm">退出</a>
-                </span>
+                <a href="/login.html" class="btn btn-sm logged-out-only">登录</a>
+                <a href="/register.html" class="btn btn-sm logged-out-only">注册</a>
+                <a href="/dashboard.html" class="btn btn-sm logged-in-only" style="display: none;">个人中心</a>
+                <a href="/admin-dashboard.html" class="btn btn-sm admin-only" style="display: none;">管理后台</a>
+                <a href="#" id="logoutBtn" class="btn btn-sm logged-in-only" style="display: none;">退出登录</a>
+                <span id="welcomeMessage">欢迎访问</span>
             </div>
         </div>
     </header>
@@ -254,6 +253,9 @@
         </div>
     </footer>
 
+    <!-- 引入auth-check.js文件 -->
+    <script src="/js/auth-check.js"></script>
+
     <script>
         // 全局变量
         let currentPage = 0;
@@ -264,9 +266,6 @@
 
         // 页面加载完成后执行
         document.addEventListener('DOMContentLoaded', function() {
-            // 检查用户登录状态
-            checkLoginStatus();
-            
             // 加载条文数据
             loadPassages(currentPage);
             
@@ -289,40 +288,7 @@
                 document.getElementById('pagination').style.display = 'flex';
                 document.getElementById('passageDetail').style.display = 'none';
             });
-            
-            // 退出登录
-            document.getElementById('logoutBtn').addEventListener('click', function(e) {
-                e.preventDefault();
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                checkLoginStatus();
-                alert('已成功退出登录');
-            });
         });
-        
-        // 检查用户登录状态
-        function checkLoginStatus() {
-            const token = localStorage.getItem('token');
-            const userInfo = localStorage.getItem('user');
-            
-            if (token && userInfo) {
-                try {
-                    const user = JSON.parse(userInfo);
-                    document.getElementById('username').textContent = user.username;
-                    document.getElementById('userInfo').style.display = 'inline';
-                    document.getElementById('loginBtn').style.display = 'none';
-                    document.getElementById('registerBtn').style.display = 'none';
-                } catch (e) {
-                    console.error('解析用户信息失败:', e);
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                }
-            } else {
-                document.getElementById('userInfo').style.display = 'none';
-                document.getElementById('loginBtn').style.display = 'inline';
-                document.getElementById('registerBtn').style.display = 'inline';
-            }
-        }
         
         // 加载条文数据
         function loadPassages(page) {

@@ -462,6 +462,11 @@
             
             // 侧边栏导航切换
             document.querySelectorAll('.sidebar a').forEach(link => {
+                // 跳过返回前台的链接
+                if (link.getAttribute('href') === '/index.html') {
+                    return; // 不为返回前台链接添加事件处理器
+                }
+                
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     
