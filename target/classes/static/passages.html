@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>条文库 - 中医方证速查与笔记系统</title>
+    <script src="/js/auth-utils.js"></script>
     <style>
         body {
             font-family: 'Microsoft YaHei', sans-serif;
@@ -60,6 +61,13 @@
         }
         .btn:hover {
             background-color: #45a049;
+        }
+        .btn-warning {
+            background-color: #ff9800;
+            color: white;
+        }
+        .btn-warning:hover {
+            background-color: #f57c00;
         }
         footer {
             text-align: center;
@@ -195,6 +203,60 @@
             border-radius: 5px;
             margin-top: 20px;
         }
+        /* 笔记对话框样式 */
+        .note-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .note-dialog-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .note-dialog h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .note-textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        .note-dialog-buttons {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .note-dialog-buttons button {
+            margin-left: 10px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .note-dialog-buttons .cancel-btn {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .note-dialog-buttons .save-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -242,7 +304,9 @@
                     <span>难度：<span id="detailDifficulty"></span></span>
                 </div>
                 <div id="detailContent" class="content"></div>
-                <a href="#" class="back-btn" id="backToList">返回列表</a>
+                <div id="detailActions">
+                    <a href="#" class="back-btn" id="backToList">返回列表</a>
+                </div>
             </div>
         </div>
     </div>
@@ -252,6 +316,19 @@
             <p>© 2023 中医方证速查与笔记系统 | 技术支持：Spring Boot + Angular</p>
         </div>
     </footer>
+
+    <!-- 笔记对话框 -->
+    <div id="noteDialog" class="note-dialog">
+        <div class="note-dialog-content">
+            <h3>添加笔记</h3>
+            <p id="notePassageTitle"></p>
+            <textarea id="noteContent" class="note-textarea" placeholder="在这里输入您的笔记内容..."></textarea>
+            <div class="note-dialog-buttons">
+                <button class="cancel-btn" onclick="closeNoteDialog()">取消</button>
+                <button class="save-btn" onclick="saveNote()">保存</button>
+            </div>
+        </div>
+    </div>
 
     <!-- 引入auth-check.js文件 -->
     <script src="/js/auth-check.js"></script>
@@ -500,6 +577,51 @@
                     document.getElementById('detailDifficulty').textContent = getDifficultyText(passage.difficulty);
                     document.getElementById('detailContent').textContent = passage.content || '无内容';
                     
+                    // 更新操作按钮
+                    const actionButtons = document.getElementById('detailActions');
+                    // 保留返回按钮
+                    const backButton = document.getElementById('backToList');
+                    
+                    // 清除旧的按钮（除了返回按钮）
+                    while (actionButtons.firstChild) {
+                        if (actionButtons.firstChild !== backButton) {
+                            actionButtons.removeChild(actionButtons.firstChild);
+                        } else {
+                            // 如果是返回按钮，跳过
+                            actionButtons.appendChild(backButton);
+                            actionButtons.removeChild(actionButtons.firstChild);
+                        }
+                    }
+                    
+                    // 重新添加返回按钮
+                    actionButtons.appendChild(backButton);
+                    
+                    // 添加错题本按钮（仅对已登录用户显示）
+                    if (localStorage.getItem('token')) {
+                        const wrongAnswerBtn = document.createElement('button');
+                        wrongAnswerBtn.className = 'btn btn-warning';
+                        wrongAnswerBtn.style.marginLeft = '10px';
+                        wrongAnswerBtn.textContent = '添加到错题本';
+                        wrongAnswerBtn.onclick = function() {
+                            addToWrongAnswers(passage.id);
+                        };
+                        actionButtons.appendChild(wrongAnswerBtn);
+                        
+                        // 添加笔记按钮
+                        const noteBtn = document.createElement('button');
+                        noteBtn.className = 'btn';
+                        noteBtn.style.marginLeft = '10px';
+                        noteBtn.style.backgroundColor = '#2196F3';
+                        noteBtn.textContent = '添加笔记';
+                        noteBtn.onclick = function() {
+                            showNoteDialog(passage.id, passage.title);
+                        };
+                        actionButtons.appendChild(noteBtn);
+                        
+                        // 记录学习时间
+                        recordStudyTime(passage.id);
+                    }
+                    
                     // 显示详情区域，隐藏列表
                     document.getElementById('passagesList').style.display = 'none';
                     document.getElementById('pagination').style.display = 'none';
@@ -509,6 +631,46 @@
                     console.error('获取条文详情失败:', error);
                     alert('获取条文详情失败: ' + error.message);
                 });
+        }
+        
+        // 返回列表
+        function backToList() {
+            document.getElementById('passagesList').style.display = 'block';
+            document.getElementById('pagination').style.display = 'flex';
+            document.getElementById('passageDetail').style.display = 'none';
+        }
+        
+        // 添加到错题本
+        function addToWrongAnswers(passageId) {
+            if (!isLoggedIn()) {
+                if (confirm('请先登录后再添加到错题本，是否立即登录？')) {
+                    // 保存当前页面URL，以便登录后返回
+                    localStorage.setItem('redirectAfterLogin', window.location.href);
+                    redirectToLogin();
+                }
+                return;
+            }
+            
+            fetch('/api/wrong-answers', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ passageId: passageId })
+            })
+            .then(response => handleApiResponse(response, '添加到错题本失败', true))
+            .then(data => {
+                alert('已成功添加到错题本');
+            })
+            .catch(error => handleApiError(error, '添加到错题本失败', true, function(err) {
+                // 处理认证错误
+                if (confirm('登录已过期，需要重新登录后才能添加到错题本，是否立即登录？')) {
+                    // 保存当前页面URL，以便登录后返回
+                    localStorage.setItem('redirectAfterLogin', window.location.href);
+                    // 清除认证数据
+                    clearAuthData();
+                    // 跳转到登录页面
+                    redirectToLogin();
+                }
+            }));
         }
         
         // 获取难度文本
@@ -522,6 +684,117 @@
                 default: return '未知';
             }
         }
+        
+        // 记录学习时间
+        function recordStudyTime(passageId) {
+            // 只有登录用户才记录学习时间
+            if (!isLoggedIn()) {
+                return;
+            }
+            
+            // 调用后端API更新学习记录
+            fetch(`/study-records/update/${passageId}`, {
+                method: 'POST',
+                headers: getAuthHeaders()
+            })
+            .then(response => handleApiResponse(response, '记录学习时间失败', true))
+            .then(data => {
+                console.log('学习时间已记录');
+            })
+            .catch(error => {
+                console.error('记录学习时间失败:', error);
+                // 静默处理错误，不打扰用户阅读
+            });
+        }
+        
+        // 显示笔记对话框
+        let currentPassageId = null;
+        
+        function showNoteDialog(passageId, passageTitle) {
+            // 只有登录用户才能添加笔记
+            if (!isLoggedIn()) {
+                if (confirm('请先登录后再添加笔记，是否立即登录？')) {
+                    // 保存当前页面URL，以便登录后返回
+                    localStorage.setItem('redirectAfterLogin', window.location.href);
+                    redirectToLogin();
+                }
+                return;
+            }
+            
+            currentPassageId = passageId;
+            
+            // 设置对话框标题
+            document.getElementById('notePassageTitle').textContent = `为「${passageTitle}」添加笔记`;
+            
+            // 检查是否已有笔记
+            fetch(`/api/notes/passage/${passageId}`, {
+                headers: getAuthHeaders()
+            })
+            .then(response => handleApiResponse(response, '获取笔记失败', true))
+            .then(data => {
+                const noteContent = document.getElementById('noteContent');
+                if (data && data.length > 0) {
+                    // 如果已有笔记，显示最新的一条
+                    noteContent.value = data[0].content;
+                } else {
+                    // 如果没有笔记，清空输入框
+                    noteContent.value = '';
+                }
+                
+                // 显示对话框
+                const noteDialog = document.getElementById('noteDialog');
+                noteDialog.style.display = 'flex';
+            })
+            .catch(error => {
+                console.error('获取笔记失败:', error);
+                // 如果获取失败，仍然显示空白对话框
+                document.getElementById('noteContent').value = '';
+                document.getElementById('noteDialog').style.display = 'flex';
+            });
+        }
+        
+        // 关闭笔记对话框
+        function closeNoteDialog() {
+            document.getElementById('noteDialog').style.display = 'none';
+            currentPassageId = null;
+        }
+        
+        // 保存笔记
+        function saveNote() {
+            if (!currentPassageId) {
+                alert('保存失败：无法确定条文ID');
+                return;
+            }
+            
+            const content = document.getElementById('noteContent').value.trim();
+            if (!content) {
+                alert('笔记内容不能为空');
+                return;
+            }
+            
+            // 调用后端API保存笔记
+            fetch('/api/notes', {
+                method: 'POST',
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    passageId: currentPassageId,
+                    content: content
+                })
+            })
+            .then(response => handleApiResponse(response, '保存笔记失败', true))
+            .then(data => {
+                alert('笔记保存成功');
+                closeNoteDialog();
+            })
+            .catch(error => {
+                console.error('保存笔记失败:', error);
+                alert('保存笔记失败: ' + error.message);
+            });
+        }
+        
     </script>
 </body>
 </html>

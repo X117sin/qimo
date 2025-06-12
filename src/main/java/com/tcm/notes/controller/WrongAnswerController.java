@@ -24,7 +24,7 @@ import java.util.Optional;
  * 错题本控制器，处理错题记录的管理
  */
 @RestController
-@RequestMapping("/wrong-answers")
+@RequestMapping("/api/wrong-answers")
 public class WrongAnswerController {
 
     @Autowired

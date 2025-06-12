@@ -25,7 +25,7 @@ import java.util.Map;
  * 笔记控制器，处理笔记的CRUD操作
  */
 @RestController
-@RequestMapping("/notes")
+@RequestMapping("/api/notes")
 public class NoteController {
 
     @Autowired

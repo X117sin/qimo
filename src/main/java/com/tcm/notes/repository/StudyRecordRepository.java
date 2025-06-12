@@ -82,4 +82,13 @@ public interface StudyRecordRepository extends JpaRepository<StudyRecord, Long> 
      */
     @Query("SELECT s FROM StudyRecord s WHERE s.user.id = :userId ORDER BY s.studyTime DESC")
     List<StudyRecord> findMostStudiedPassagesByUserId(@Param("userId") Long userId, Pageable pageable);
+    
+    /**
+     * 获取用户学习时间超过指定阈值的条文数量
+     * @param userId 用户ID
+     * @param minStudyTime 最小学习时间（分钟）
+     * @return 学习条文数量
+     */
+    @Query("SELECT COUNT(s) FROM StudyRecord s WHERE s.user.id = :userId AND s.studyTime >= :minStudyTime")
+    long countByUserIdAndStudyTimeGreaterThanEqual(@Param("userId") Long userId, @Param("minStudyTime") Integer minStudyTime);
 }

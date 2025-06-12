@@ -68,12 +68,12 @@ public class StudyRecordServiceImpl implements StudyRecordService {
             studyRecord = new StudyRecord();
             studyRecord.setUser(user);
             studyRecord.setPassage(passage);
-            studyRecord.setStudyTime(1); // 初始学习时间为1分钟
+            studyRecord.setStudyTime(1); // 初始学习时间为1（系统中以分钟为单位，但前端显示为秒钟）
             studyRecord.setLastStudyAt(LocalDateTime.now());
         } else {
             // 更新现有学习记录
             studyRecord.setLastStudyAt(LocalDateTime.now());
-            studyRecord.setStudyTime(studyRecord.getStudyTime() + 1); // 每次更新增加1分钟学习时间
+            studyRecord.setStudyTime(studyRecord.getStudyTime() + 1); // 每次更新增加1（系统中以分钟为单位，但前端显示为秒钟）
         }
         
         return studyRecordRepository.save(studyRecord);
@@ -83,8 +83,8 @@ public class StudyRecordServiceImpl implements StudyRecordService {
     public Map<String, Object> getUserStudyStatistics(Long userId) {
         Map<String, Object> statistics = new HashMap<>();
         
-        // 获取已学习条文数量
-        long studiedCount = studyRecordRepository.countByUserId(userId);
+        // 获取已学习条文数量（只计算学习时间超过5秒钟的条文）
+        long studiedCount = studyRecordRepository.countByUserIdAndStudyTimeGreaterThanEqual(userId, 1);
         statistics.put("studiedCount", studiedCount);
         
         // 获取最近学习时间

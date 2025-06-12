@@ -49,4 +49,9 @@ public class User {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+    
+    // 重写setRole方法，确保角色名称始终为大写
+    public void setRole(String role) {
+        this.role = role != null ? role.toUpperCase() : "USER";
+    }
 }

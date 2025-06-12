@@ -112,6 +112,41 @@
             font-weight: bold;
             color: #333;
         }
+        .stat-card .time-info {
+            font-size: 1.2em;
+            color: #333;
+            margin-top: 5px;
+        }
+        .info-text {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress {
+            height: 100%;
+            background-color: #4CAF50;
+            border-radius: 10px;
+            transition: width 0.5s ease-in-out;
+        }
+        .progress-text {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .progress-text span {
+            margin: 0 3px;
+        }
         .notes-list {
             margin-top: 20px;
         }
@@ -177,6 +212,7 @@
                     <ul>
                         <li><a href="#" class="active" data-section="overview">个人概览</a></li>
                         <li><a href="#" data-section="notes">我的笔记</a></li>
+                        <li><a href="/error-notebook.html">我的错题本</a></li>
                         <li><a href="#" data-section="settings">账户设置</a></li>
                         <li><a href="/index.html">返回首页</a></li>
                     </ul>
@@ -205,6 +241,33 @@
                             <div class="stat-card">
                                 <h4>收藏条文</h4>
                                 <div class="number" id="favorites-count">0</div>
+                            </div>
+                        </div>
+                        
+                        <h3>学习进度统计</h3>
+                        <div class="stats-box" id="study-statistics-container">
+                            <div class="stat-card">
+                                <h4>已学习条数</h4>
+                                <div class="number" id="studied-count">0</div>
+                                <div class="info-text" id="studied-count-info">(学习时间≥5分钟的条文)</div>
+                            </div>
+                            <div class="stat-card">
+                                <h4>最近学习时间</h4>
+                                <div class="time-info" id="last-study-time">暂无记录</div>
+                            </div>
+                            <div class="stat-card">
+                                <h4>总学习时间</h4>
+                                <div class="time-info" id="total-study-time">0 分钟</div>
+                            </div>
+                            <div class="stat-card">
+                                <h4>学习进度</h4>
+                                <div class="progress-bar">
+                                    <div class="progress" id="study-progress" style="width: 0%;"></div>
+                                </div>
+                                <div class="progress-text">
+                                    <span id="progress-percentage">0%</span>
+                                    (<span id="studied-count-progress">0</span>/<span id="total-passages">0</span>)
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -454,5 +517,8 @@
             }
         });
     </script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/study-statistics.js"></script>
 </body>
 </html>

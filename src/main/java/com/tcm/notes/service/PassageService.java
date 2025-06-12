@@ -60,4 +60,10 @@ public interface PassageService {
      * @return 更新后的条文
      */
     Passage updatePassage(Long id, Passage passageDetails);
+
+    /**
+     * 获取条文总数量
+     * @return 条文总数量
+     */
+    long count();
 }

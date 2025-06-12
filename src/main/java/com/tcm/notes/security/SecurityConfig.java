@@ -53,6 +53,9 @@ public class SecurityConfig {
                 // API请求时进行权限控制
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").authenticated()
+.requestMatchers("/api/notes/**").authenticated()
+                // 允许访问错题本API，但需要认证
+                .requestMatchers("/api/wrong-answers/**").authenticated()
                 // 同时允许带有/api前缀的静态资源路径
                 .requestMatchers("/api", "/api/", "/api/index.html", "/api/login.html", "/api/register.html", "/api/dashboard.html", "/api/passages.html", "/api/static/**", "/api/assets/**", "/api/css/**", "/api/js/**", "/api/images/**", "/api/favicon.ico").permitAll()
                 .requestMatchers("/health").permitAll()

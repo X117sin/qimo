@@ -236,14 +236,23 @@
                 // 设置一个Cookie，以防localStorage不可用
                 document.cookie = `token=${data.token}; path=/; max-age=86400`;
                 
-                // 根据用户角色跳转到不同页面
-                if (userObj.role === 'ADMIN') {
-                    // 管理员跳转到管理员仪表盘
-                    console.log('管理员登录成功，正在跳转到管理员仪表盘...');
-                    window.location.href = '/admin-dashboard.html';
+                // 检查是否有登录后重定向URL
+                const redirectUrl = localStorage.getItem('redirectAfterLogin');
+                if (redirectUrl) {
+                    // 清除重定向URL
+                    localStorage.removeItem('redirectAfterLogin');
+                    // 跳转回之前的页面
+                    window.location.href = redirectUrl;
                 } else {
-                    // 普通用户跳转到用户仪表盘
-                    window.location.href = '/dashboard.html';
+                    // 根据用户角色跳转到不同页面
+                    if (userObj.role === 'ADMIN') {
+                        // 管理员跳转到管理员仪表盘
+                        console.log('管理员登录成功，正在跳转到管理员仪表盘...');
+                        window.location.href = '/admin-dashboard.html';
+                    } else {
+                        // 普通用户跳转到用户仪表盘
+                        window.location.href = '/dashboard.html';
+                    }
                 }
             })
             .catch(error => {

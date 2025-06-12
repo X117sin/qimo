@@ -68,4 +68,9 @@ public class PassageServiceImpl implements PassageService {
                 })
                 .orElseThrow(() -> new RuntimeException("条文不存在，ID: " + id));
     }
+
+    @Override
+    public long count() {
+        return passageRepository.count();
+    }
 }

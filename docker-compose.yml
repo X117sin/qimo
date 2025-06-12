@@ -10,7 +10,7 @@ services:
       MYSQL_USER: tcm_user
       MYSQL_PASSWORD: tcm_password
     ports:
-      - "13306:3306"
+      - "33306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
@@ -28,14 +28,14 @@ services:
       mysql:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/tcm_notes?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
       # 注意：容器内部连接使用默认3306端口，因为是在Docker网络内部通信
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 123456
-      SERVER_PORT: 8080
-      SERVER_SERVLET_CONTEXT_PATH: /api
+      SERVER_PORT: 8081
+      # SERVER_SERVLET_CONTEXT_PATH: /api
     networks:
       - tcm-network
 

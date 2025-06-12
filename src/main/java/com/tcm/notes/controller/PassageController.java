@@ -134,4 +134,16 @@ public class PassageController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    /**
+     * 获取条文总数量
+     * @return 条文总数量
+     */
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Object>> getPassageCount() {
+        long count = passageService.count();
+        Map<String, Object> response = new HashMap<>();
+        response.put("count", count);
+        return ResponseEntity.ok(response);
+    }
 }
