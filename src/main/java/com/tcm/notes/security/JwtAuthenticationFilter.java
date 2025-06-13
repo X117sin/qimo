@@ -31,44 +31,50 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        // 获取原始请求路径
-        String requestPath = request.getRequestURI();
-        // 获取应用上下文路径
-        String contextPath = request.getContextPath();
-        
-        // 添加详细的调试日志
-        logger.info("原始请求路径: " + requestPath + ", 上下文路径: " + contextPath);
-        
-        // 移除上下文路径前缀，以便正确匹配
-        if (contextPath != null && !contextPath.isEmpty() && requestPath.startsWith(contextPath)) {
-            requestPath = requestPath.substring(contextPath.length());
-            logger.info("移除上下文路径后的请求路径: " + requestPath);
-        }
-        
-        // 跳过对公共资源的处理
-        if (requestPath.startsWith("/public") || 
-            requestPath.startsWith("/api/public") || 
-            requestPath.equals("/api/public/passages") || // 明确添加这个路径
-            requestPath.startsWith("/auth") || 
-            requestPath.equals("/") || 
-            requestPath.equals("/index.html") || 
-            requestPath.equals("/login.html") || 
-            requestPath.equals("/register.html") || 
-            requestPath.equals("/passages.html") || 
-            requestPath.equals("/create-admin.html") || 
-            requestPath.equals("/admin-check.html") || 
-            requestPath.equals("/admin-dashboard.html") || // 允许访问管理员仪表盘页面
-            requestPath.equals("/dashboard.html") || // 允许访问用户仪表盘页面
-            requestPath.startsWith("/static") || 
-            requestPath.startsWith("/assets") || 
-            requestPath.startsWith("/css") || 
-            requestPath.startsWith("/js") || 
-            requestPath.startsWith("/images") || 
-            requestPath.equals("/favicon.ico")) {
-            logger.info("跳过认证的公共路径: " + requestPath);
-            filterChain.doFilter(request, response);
-            return;
-        }
+        try {
+            logger.info("处理请求: " + request.getMethod() + " " + request.getRequestURI());
+            logger.info("请求头信息: Authorization=" + request.getHeader("Authorization"));
+            logger.info("Cookie信息: " + request.getHeader("Cookie"));
+            
+            // 检查是否是公共资源或静态资源
+            // 获取原始请求路径
+            String requestPath = request.getRequestURI();
+            // 获取应用上下文路径
+            String contextPath = request.getContextPath();
+            
+            // 添加详细的调试日志
+            logger.info("原始请求路径: " + requestPath + ", 上下文路径: " + contextPath);
+            
+            // 移除上下文路径前缀，以便正确匹配
+            if (contextPath != null && !contextPath.isEmpty() && requestPath.startsWith(contextPath)) {
+                requestPath = requestPath.substring(contextPath.length());
+                logger.info("移除上下文路径后的请求路径: " + requestPath);
+            }
+            
+            // 跳过对公共资源的处理
+            if (requestPath.startsWith("/public") || 
+                requestPath.startsWith("/api/public") || 
+                requestPath.equals("/api/public/passages") || // 明确添加这个路径
+                requestPath.startsWith("/auth") || 
+                requestPath.equals("/") || 
+                requestPath.equals("/index.html") || 
+                requestPath.equals("/login.html") || 
+                requestPath.equals("/register.html") || 
+                requestPath.equals("/passages.html") || 
+                requestPath.equals("/create-admin.html") || 
+                requestPath.equals("/admin-check.html") || 
+                requestPath.equals("/admin-dashboard.html") || // 允许访问管理员仪表盘页面
+                requestPath.equals("/dashboard.html") || // 允许访问用户仪表盘页面
+                requestPath.startsWith("/static") || 
+                requestPath.startsWith("/assets") || 
+                requestPath.startsWith("/css") || 
+                requestPath.startsWith("/js") || 
+                requestPath.startsWith("/images") || 
+                requestPath.equals("/favicon.ico")) {
+                logger.info("公共或静态资源请求，跳过JWT验证: " + request.getRequestURI());
+                filterChain.doFilter(request, response);
+                return;
+            }
         // 增加调试日志，输出所有请求头信息
         java.util.Enumeration<String> headerNames = request.getHeaderNames();
         StringBuilder headersLog = new StringBuilder("请求头信息: ");
@@ -81,14 +87,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 添加调试日志
         logger.info("需要认证的请求: " + request.getRequestURI() + ", 处理后路径: " + requestPath);
         
-        try {
-            String jwt = getJwtFromRequest(request);
+        // 从请求中获取JWT令牌
+        String jwt = getJwtFromRequest(request);
+        logger.info("提取的JWT令牌: " + (jwt != null ? jwt.substring(0, Math.min(10, jwt.length())) + "..." : "null"));
 
-            if (StringUtils.hasText(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
-                String username = jwtTokenProvider.getUsernameFromToken(jwt);
-                
-                // 添加JWT令牌解析日志
-                logger.info("从JWT令牌中解析出用户名: " + username);
+        // 如果令牌存在且有效
+        if (StringUtils.hasText(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
+            String username = jwtTokenProvider.getUsernameFromToken(jwt);
+            
+            // 添加JWT令牌解析日志
+            logger.info("从JWT令牌中解析出用户名: " + username);
                 
                 // 添加JWT令牌内容日志
                 try {

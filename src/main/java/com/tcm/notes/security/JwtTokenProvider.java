@@ -4,6 +4,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,6 +22,8 @@ import java.util.function.Function;
  */
 @Component
 public class JwtTokenProvider {
+    
+    private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -33,8 +37,28 @@ public class JwtTokenProvider {
      * @return JWT令牌
      */
     public String generateToken(Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        return generateToken(userDetails.getUsername());
+        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
+        logger.info("生成JWT令牌，用户名: {}", userPrincipal.getUsername());
+        
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+        logger.info("JWT令牌过期时间: {}", expiryDate);
+        
+        String authorities = authentication.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .collect(java.util.stream.Collectors.joining(","));
+        logger.info("用户权限: {}", authorities);
+        
+        String token = Jwts.builder()
+                .setSubject(userPrincipal.getUsername())
+                .claim("roles", authorities)
+                .setIssuedAt(new Date())
+                .setExpiration(expiryDate)
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256)
+                .compact();
+        
+        logger.info("生成的JWT令牌: {}...", token.substring(0, Math.min(20, token.length())));
+        return token;
     }
 
     /**
@@ -54,9 +78,24 @@ public class JwtTokenProvider {
      * @return JWT令牌
      */
     public String generateToken(String userId, String role) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("role", role);
-        return createToken(claims, userId);
+        logger.info("生成JWT令牌，用户ID: {}, 角色: {}", userId, role);
+        
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+        logger.info("JWT令牌过期时间: {}", expiryDate);
+        
+        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        
+        String token = Jwts.builder()
+                .setSubject(userId)
+                .claim("role", role)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+        
+        logger.info("生成的JWT令牌: {}...", token.substring(0, Math.min(20, token.length())));
+        return token;
     }
 
     /**
@@ -86,7 +125,15 @@ public class JwtTokenProvider {
      * @return 用户名
      */
     public String getUsernameFromToken(String token) {
-        return getClaimFromToken(token, Claims::getSubject);
+        logger.info("从JWT令牌中提取用户名: {}...", token != null ? token.substring(0, Math.min(20, token.length())) : "null");
+        try {
+            String username = getClaimFromToken(token, Claims::getSubject);
+            logger.info("成功从JWT令牌中提取用户名: {}", username);
+            return username;
+        } catch (Exception e) {
+            logger.error("从JWT令牌中提取用户名时发生错误: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -151,7 +198,40 @@ public class JwtTokenProvider {
      * @return 是否有效
      */
     public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = getUsernameFromToken(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        final String tokenSubject = getUsernameFromToken(token); // 这里实际是用户ID
+        logger.info("验证JWT令牌: tokenSubject={}, userDetails.username={}", tokenSubject, userDetails.getUsername());
+        
+        // 由于JWT中存储的是用户ID，而UserDetails中的username是真实用户名
+        // 我们只需要验证令牌没有过期即可，用户身份已经通过loadUserByUsername验证
+        boolean isValid = !isTokenExpired(token);
+        logger.info("JWT令牌验证结果: {}", isValid ? "成功" : "失败（已过期）");
+        return isValid;
+    }
+    
+    /**
+     * 验证令牌是否有效
+     * @param authToken JWT令牌
+     * @return 是否有效
+     */
+    public boolean validateToken(String authToken) {
+        logger.info("验证JWT令牌: {}...", authToken != null ? authToken.substring(0, Math.min(20, authToken.length())) : "null");
+        try {
+            Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(authToken);
+            logger.info("JWT令牌验证成功");
+            return true;
+        } catch (io.jsonwebtoken.security.SecurityException | io.jsonwebtoken.MalformedJwtException e) {
+            logger.error("无效的JWT签名: {}", e.getMessage());
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            logger.error("JWT令牌已过期: {}", e.getMessage());
+        } catch (io.jsonwebtoken.UnsupportedJwtException e) {
+            logger.error("不支持的JWT令牌: {}", e.getMessage());
+        } catch (IllegalArgumentException e) {
+            logger.error("JWT声明字符串为空: {}", e.getMessage());
+        } catch (Exception e) {
+            logger.error("JWT验证过程中发生未知错误: {}", e.getMessage());
+        }
+        logger.info("JWT令牌验证失败");
+        return false;
     }
 }

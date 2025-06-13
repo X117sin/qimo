@@ -224,6 +224,9 @@
         
         // 页面加载完成后执行
         document.addEventListener('DOMContentLoaded', function() {
+            // 显示用户名
+            displayUsername();
+            
             // 加载错题记录
             loadWrongAnswers(currentPage, pageSize);
             
@@ -233,7 +236,31 @@
                     clearAllWrongAnswers();
                 }
             });
+            
+            // 绑定退出登录按钮事件
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/index.html';
+            });
         });
+        
+        // 显示用户名
+        function displayUsername() {
+            const userJson = localStorage.getItem('user');
+            if (userJson) {
+                try {
+                    const user = JSON.parse(userJson);
+                    const usernameElement = document.getElementById('username');
+                    if (usernameElement) {
+                        usernameElement.textContent = user.username;
+                    }
+                } catch (e) {
+                    console.error('解析用户信息失败:', e);
+                }
+            }
+        }
         
         // 加载错题记录
         function loadWrongAnswers(page, size) {
@@ -267,7 +294,6 @@
                 handleApiError(error, '获取错题记录失败');
             });
         }
-        // 移除多余的大括号
     
     // 渲染错题列表
     function renderWrongAnswers(wrongAnswers) {
@@ -292,16 +318,16 @@
             html += `
                 <div class="error-item" data-id="${item.id}">
                     <div class="error-count">${item.timesWrong}</div>
-                    <h3>${item.passage.title || '未知条文'}</h3>
+                    <h3>${item.passageTitle || '未知条文'}</h3>
                     <div class="meta">
                         <p><strong>最近错误时间:</strong> ${lastWrongDate}</p>
                         <p><strong>错误次数:</strong> ${item.timesWrong}</p>
                     </div>
                     <div class="passage-content">
-                        <p>${item.passage.content || '无内容'}</p>
+                        <p>${item.passageContent || '无内容'}</p>
                     </div>
                     <div class="actions">
-                        <a href="/passages.html?id=${item.passage.id}" class="btn">重新学习</a>
+                        <a href="/passages.html?id=${item.passageId}" class="btn">重新学习</a>
                         <button class="btn btn-danger delete-btn" data-id="${item.id}">从错题本移除</button>
                     </div>
                 </div>
@@ -398,36 +424,3 @@
     </script>
 </body>
 </html>
-
-// 加载错题记录
-function loadWrongAnswers(page, size) {
-    if (!isLoggedIn()) {
-        redirectToLogin();
-        return;
-    }
-    
-    const errorList = document.getElementById('errorList');
-    errorList.innerHTML = '<div class="loading">正在加载错题记录...</div>';
-    
-    fetch(`/wrong-answers?page=${page}&size=${size}`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-    })
-    .then(response => handleApiResponse(response, '获取错题记录失败'))
-    .then(data => {
-        // 更新当前页码和总页数
-        currentPage = data.currentPage;
-        totalPages = data.totalPages;
-        
-        // 渲染错题列表
-        renderWrongAnswers(data.wrongAnswers);
-        
-        // 渲染分页控件
-        renderPagination(currentPage, totalPages);
-    })
-    .catch(error => {
-        console.error('获取错题记录失败:', error);
-        errorList.innerHTML = `<div class="empty-state">获取错题记录失败: ${error.message}</div>`;
-        handleApiError(error, '获取错题记录失败');
-    });
-}

@@ -370,6 +370,44 @@
             .catch(error => {
                 console.error('获取用户统计信息失败:', error);
             });
+            
+            // 检查是否有错题记录，动态显示错题本链接
+            checkWrongAnswersAndShowLink();
+        }
+        
+        // 检查错题记录并显示/隐藏错题本链接
+        function checkWrongAnswersAndShowLink() {
+            const token = localStorage.getItem('token');
+            const wrongAnswerLink = document.querySelector('a[href="/error-notebook.html"]');
+            
+            fetch('/api/wrong-answers?page=0&size=1', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('获取错题记录失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.totalItems > 0) {
+                    // 有错题记录，显示链接
+                    wrongAnswerLink.style.display = 'block';
+                    wrongAnswerLink.parentElement.style.display = 'block';
+                } else {
+                    // 没有错题记录，隐藏链接
+                    wrongAnswerLink.style.display = 'none';
+                    wrongAnswerLink.parentElement.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('检查错题记录失败:', error);
+                // 出错时默认显示链接
+                wrongAnswerLink.style.display = 'block';
+                wrongAnswerLink.parentElement.style.display = 'block';
+            });
         }
         
         // 加载用户笔记

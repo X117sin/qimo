@@ -164,6 +164,12 @@
             alertBox.style.display = 'none';
             alertBox.textContent = '';
             
+            console.log('准备发送登录请求...');
+            console.log('请求数据:', JSON.stringify({
+                username: username,
+                password: password
+            }));
+            
             // 发送登录请求
             fetch('/api/auth/login', {
                 method: 'POST',
@@ -173,17 +179,31 @@
                 body: JSON.stringify({
                     username: username,
                     password: password
-                })
+                }),
+                credentials: 'include' // 确保包含cookies
             })
             .then(response => {
+                console.log('收到响应:', response.status, response.statusText);
+                console.log('响应头:', response.headers);
+                
+                // 记录所有响应头
+                response.headers.forEach((value, name) => {
+                    console.log(`${name}: ${value}`);
+                });
+                
                 // 先检查响应状态
                 if (!response.ok) {
+                    console.error('响应不成功:', response.status, response.statusText);
+                    
                     // 如果响应不成功，尝试解析JSON响应
                     return response.text().then(text => {
+                        console.log('错误响应内容:', text);
+                        
                         // 尝试将响应解析为JSON
                         try {
                             if (text && text.trim()) {
                                 const data = JSON.parse(text);
+                                console.error('解析后的错误信息:', data);
                                 throw new Error(data.message || '登录失败，请检查用户名和密码');
                             } else {
                                 throw new Error('登录失败，服务器返回回应为空');
@@ -199,7 +219,8 @@
                     });
                 }
                 
-                // 如果响应成功，尝试解析JSON
+                // 如果响应成功，解析JSON
+                console.log('响应成功，准备解析JSON');
                 return response.text().then(text => {
                     if (!text || !text.trim()) {
                         throw new Error('登录失败，服务器返回回应为空');
@@ -213,6 +234,8 @@
                 });
             })
             .then(data => {
+                console.log('登录成功，收到数据:', data);
+                
                 // 确保令牌存在
                 if (!data.token) {
                     throw new Error('服务器未返回有效的认证令牌');
@@ -228,6 +251,10 @@
                 }
                 
                 localStorage.setItem('user', JSON.stringify(userObj));
+                console.log('已保存到localStorage:', {
+                    token: data.token,
+                    user: userObj
+                });
                 
                 console.log('登录成功，用户信息：', userObj);
                 console.log('用户角色：', userObj.role);
@@ -235,6 +262,8 @@
                 
                 // 设置一个Cookie，以防localStorage不可用
                 document.cookie = `token=${data.token}; path=/; max-age=86400`;
+                console.log('已设置cookie');
+                console.log('当前所有cookie:', document.cookie);
                 
                 // 检查是否有登录后重定向URL
                 const redirectUrl = localStorage.getItem('redirectAfterLogin');

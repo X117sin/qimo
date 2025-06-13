@@ -11,9 +11,10 @@
  * @returns {Promise} - 处理后的Promise
  */
 function handleApiResponse(response, errorMessage = '请求失败', silentAuth = false) {
+
     if (!response.ok) {
-        // 检查是否是403错误（权限问题，通常是token过期）
-        if (response.status === 403) {
+        // 检查是否是401或403错误（认证问题，通常是token过期或无效）
+        if (response.status === 401 || response.status === 403) {
             if (silentAuth) {
                 // 静默模式下，只返回错误，不清除认证数据和跳转
                 throw new Error('认证失败');
@@ -39,7 +40,7 @@ function handleApiError(error, logPrefix = '请求失败', silentAuth = false, o
     console.error(`${logPrefix}:`, error);
     
     // 如果是认证失败且提供了回调函数
-    if (silentAuth && error.message.includes('认证失败') && onAuthError) {
+    if (silentAuth && (error.message.includes('认证失败') || error.message.includes('登录已过期')) && onAuthError) {
         onAuthError(error);
         return;
     }
@@ -47,8 +48,8 @@ function handleApiError(error, logPrefix = '请求失败', silentAuth = false, o
     // 显示错误消息
     alert(`${logPrefix}: ${error.message}`);
     
-    // 如果是登录过期，跳转到登录页面
-    if (error.message.includes('登录已过期')) {
+    // 如果是登录过期或认证失败，跳转到登录页面
+    if (error.message.includes('登录已过期') || error.message.includes('认证失败')) {
         window.location.href = '/login.html';
     }
 }
@@ -87,3 +88,27 @@ function isLoggedIn() {
 function redirectToLogin() {
     window.location.href = '/login.html';
 }
+
+// 在页面加载时检查token状态
+window.addEventListener('load', function() {
+    if (isLoggedIn()) {
+        const token = localStorage.getItem('token');
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const currentTime = Date.now() / 1000;
+            const timeUntilExpiry = payload.exp - currentTime;
+            // 如果token在2小时内过期，显示提醒
+            if (timeUntilExpiry < 7200 && timeUntilExpiry > 0) {
+                const hours = Math.floor(timeUntilExpiry / 3600);
+                const minutes = Math.floor((timeUntilExpiry % 3600) / 60);
+                const timeText = hours > 0 ? `${hours}小时${minutes}分钟` : `${minutes}分钟`;
+                if (confirm(`您的登录状态将在${timeText}后过期，是否现在重新登录？`)) {
+                    // 执行刷新逻辑或重新登录
+                    window.location.href = '/login.html';
+                }
+            }
+        } catch (error) {
+            console.error('检查token状态失败:', error);
+        }
+    }
+}); // 结束页面加载事件监听器

@@ -21,8 +21,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     private UserRepository userRepository;
 
     /**
-     * 根据用户名加载用户
-     * @param username 用户名
+     * 根据用户名或用户ID加载用户
+     * @param username 用户名或用户ID
      * @return UserDetails对象
      * @throws UsernameNotFoundException 用户名未找到异常
      */
@@ -30,11 +30,24 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         System.out.println("正在加载用户: " + username);
         
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> {
-                    System.out.println("用户不存在: " + username);
-                    return new UsernameNotFoundException("用户不存在: " + username);
-                });
+        User user = null;
+        
+        // 判断传入的是用户ID还是用户名
+        try {
+            // 尝试将username解析为Long类型的ID
+            Long userId = Long.parseLong(username);
+            System.out.println("检测到用户ID: " + userId + "，按ID查找用户");
+            user = userRepository.findById(userId).orElse(null);
+        } catch (NumberFormatException e) {
+            // 如果解析失败，说明是用户名
+            System.out.println("检测到用户名: " + username + "，按用户名查找用户");
+            user = userRepository.findByUsername(username).orElse(null);
+        }
+        
+        if (user == null) {
+            System.out.println("用户不存在: " + username);
+            throw new UsernameNotFoundException("用户不存在: " + username);
+        }
 
         System.out.println("成功加载用户: " + username + ", 角色: " + user.getRole());
         

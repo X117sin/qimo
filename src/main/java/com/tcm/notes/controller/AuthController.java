@@ -4,6 +4,8 @@ import com.tcm.notes.dto.UserDto;
 import com.tcm.notes.entity.User;
 import com.tcm.notes.repository.UserRepository;
 import com.tcm.notes.security.JwtTokenProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -72,28 +76,37 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
+        logger.info("收到登录请求: 用户名={}", loginRequest.get("username"));
+        
         try {
             // 检查请求参数
             if (loginRequest == null || loginRequest.get("username") == null || loginRequest.get("password") == null) {
                 Map<String, String> response = new HashMap<>();
                 response.put("message", "用户名和密码不能为空");
+                logger.warn("登录失败: 用户名或密码为空");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
             }
             
             // 验证用户名和密码
-            authenticationManager.authenticate(
+            Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                     loginRequest.get("username"),
                     loginRequest.get("password")
                 )
             );
             
+            logger.info("用户认证成功: {}", loginRequest.get("username"));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            
             // 获取用户信息
             User user = userRepository.findByUsername(loginRequest.get("username"))
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
             
+            logger.info("从数据库获取用户信息成功: id={}, username={}, email={}", user.getId(), user.getUsername(), user.getEmail());
+            
             // 生成JWT令牌
             String token = jwtTokenProvider.generateToken(user.getId().toString(), user.getRole());
+            logger.info("生成JWT令牌成功: {}...", token.substring(0, Math.min(20, token.length())));
             
             // 返回令牌和用户信息以及角色信息（用于前端根据角色跳转到不同页面）
             Map<String, Object> response = new HashMap<>();
@@ -101,18 +114,22 @@ public class AuthController {
             response.put("user", user);
             response.put("role", user.getRole());
             
+            logger.info("登录成功，返回JWT响应");
             return ResponseEntity.ok(response);
         } catch (org.springframework.security.core.AuthenticationException e) {
+            logger.error("认证失败: {}", e.getMessage());
             Map<String, String> response = new HashMap<>();
             response.put("message", "用户名或密码错误");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (RuntimeException e) {
             // 处理运行时异常
+            logger.error("运行时异常: {}", e.getMessage(), e);
             Map<String, String> response = new HashMap<>();
             response.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         } catch (Exception e) {
             // 处理所有其他类型的异常
+            logger.error("登录过程中发生错误: {}", e.getMessage(), e);
             Map<String, String> response = new HashMap<>();
             response.put("message", "登录过程中发生错误: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);

@@ -1,4 +1,5 @@
 package com.tcm.notes.controller;
+import com.tcm.notes.dto.WrongAnswerDTO;
 import com.tcm.notes.entity.Passage;
 import com.tcm.notes.entity.User;
 import com.tcm.notes.entity.WrongAnswer;
@@ -54,7 +55,9 @@ public class WrongAnswerController {
                     .orElseThrow(() -> new RuntimeException("条文不存在"));
 
             WrongAnswer wrongAnswer = wrongAnswerService.incrementWrongCount(passageId, user.getId());
-            return new ResponseEntity<>(wrongAnswer, HttpStatus.CREATED);
+            // 转换为DTO避免懒加载序列化问题
+            WrongAnswerDTO wrongAnswerDTO = WrongAnswerDTO.fromEntity(wrongAnswer);
+            return new ResponseEntity<>(wrongAnswerDTO, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>("添加错题记录失败: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
@@ -80,8 +83,13 @@ public class WrongAnswerController {
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "lastWrongAt"));
             Page<WrongAnswer> wrongAnswers = wrongAnswerService.findByUserId(user.getId(), pageable);
 
+            // 转换为DTO避免懒加载序列化问题
+            java.util.List<WrongAnswerDTO> wrongAnswerDTOs = wrongAnswers.getContent().stream()
+                    .map(WrongAnswerDTO::fromEntity)
+                    .collect(java.util.stream.Collectors.toList());
+
             Map<String, Object> response = new HashMap<>();
-            response.put("wrongAnswers", wrongAnswers.getContent());
+            response.put("wrongAnswers", wrongAnswerDTOs);
             response.put("currentPage", wrongAnswers.getNumber());
             response.put("totalItems", wrongAnswers.getTotalElements());
             response.put("totalPages", wrongAnswers.getTotalPages());
@@ -113,7 +121,9 @@ public class WrongAnswerController {
                 return new ResponseEntity<>("无权访问此错题记录", HttpStatus.FORBIDDEN);
             }
 
-            return ResponseEntity.ok(wrongAnswer);
+            // 转换为DTO避免懒加载序列化问题
+            WrongAnswerDTO wrongAnswerDTO = WrongAnswerDTO.fromEntity(wrongAnswer);
+            return ResponseEntity.ok(wrongAnswerDTO);
         } catch (Exception e) {
             return new ResponseEntity<>("获取错题记录失败: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
@@ -136,7 +146,9 @@ public class WrongAnswerController {
             Map<String, Object> response = new HashMap<>();
             response.put("exists", wrongAnswer.isPresent());
             if (wrongAnswer.isPresent()) {
-                response.put("wrongAnswer", wrongAnswer.get());
+                // 转换为DTO避免懒加载序列化问题
+                WrongAnswerDTO wrongAnswerDTO = WrongAnswerDTO.fromEntity(wrongAnswer.get());
+                response.put("wrongAnswer", wrongAnswerDTO);
             }
 
             return ResponseEntity.ok(response);
