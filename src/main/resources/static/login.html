@@ -409,8 +409,9 @@
                         console.log('管理员登录成功，正在跳转到管理员后台...');
                         window.location.href = '/admin-simple.html';
                     } else {
-                        // 普通用户跳转到用户仪表盘
-                        window.location.href = '/dashboard.html';
+                        // 普通用户跳转到条文库列表页面
+                        console.log('普通用户登录成功，正在跳转到条文库...');
+                        window.location.href = '/passages.html';
                     }
                 }
             })
