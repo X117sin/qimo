@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>条文库 - 中医方证速查与笔记系统</title>
+    <script src="/js/auth-utils.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            margin-top: 10px;
+            font-weight: normal;
+        }
+        .user-actions {
+            margin-top: 10px;
+        }
+        .btn-sm {
+            font-size: 0.9em;
+            padding: 5px 10px;
+            margin-left: 10px;
+        }
+        .content {
+            background-color: white;
+            border-radius: 5px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .btn-warning {
+            background-color: #ff9800;
+            color: white;
+        }
+        .btn-warning:hover {
+            background-color: #f57c00;
+        }
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .passages-list {
+            margin-top: 20px;
+        }
+        .passage-item {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .passage-item:hover {
+            background-color: #e0f2e1;
+        }
+        .passage-item h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .passage-item .meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .passage-item .content-preview {
+            margin-top: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .pagination button {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .pagination button:hover {
+            background-color: #e0f2e1;
+        }
+        .pagination button.active {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        .pagination button:disabled {
+            background-color: #f5f5f5;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+        .search-bar {
+            margin: 20px 0;
+            display: flex;
+        }
+        .search-bar input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 1em;
+        }
+        .search-bar button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+        .passage-detail {
+            display: none;
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .passage-detail h2 {
+            color: #4CAF50;
+            margin-top: 0;
+        }
+        .passage-detail .meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+        .passage-detail .content {
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            display: inline-block;
+            background-color: #f9f9f9;
+            color: #333;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        .back-btn:hover {
+            background-color: #e0f2e1;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+            color: #666;
+        }
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+            color: #666;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        /* 笔记对话框样式 */
+        .note-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .note-dialog-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .note-dialog h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .note-textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        .note-dialog-buttons {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .note-dialog-buttons button {
+            margin-left: 10px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .note-dialog-buttons .cancel-btn {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .note-dialog-buttons .save-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>中医方证速查与笔记系统</h1>
+            <p class="subtitle">传承经典，智慧学习</p>
+            <div id="userActions" class="user-actions">
+                <a href="/login.html" class="btn btn-sm logged-out-only">登录</a>
+                <a href="/register.html" class="btn btn-sm logged-out-only">注册</a>
+                <a href="/dashboard.html" class="btn btn-sm logged-in-only" style="display: none;">个人中心</a>
+                <a href="/admin-dashboard.html" class="btn btn-sm admin-only" style="display: none;">管理后台</a>
+                <a href="#" id="logoutBtn" class="btn btn-sm logged-in-only" style="display: none;">退出登录</a>
+                <span id="welcomeMessage">欢迎访问</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="content">
+            <h2>条文库</h2>
+            <p>浏览和搜索中医经典条文，点击条文可查看详细内容。</p>
+            
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="输入关键词搜索条文...">
+                <button id="searchBtn">搜索</button>
+            </div>
+
+            <!-- 条文列表 -->
+            <div id="passagesList" class="passages-list">
+                <div class="loading">正在加载条文数据...</div>
+            </div>
+
+            <!-- 分页控件 -->
+            <div id="pagination" class="pagination">
+                <!-- 分页按钮将通过JavaScript动态生成 -->
+            </div>
+
+            <!-- 条文详情 -->
+            <div id="passageDetail" class="passage-detail">
+                <h2 id="detailTitle"></h2>
+                <div class="meta">
+                    <span>来源：<span id="detailSource"></span></span> | 
+                    <span>分类：<span id="detailCategory"></span></span> | 
+                    <span>难度：<span id="detailDifficulty"></span></span>
+                </div>
+                <div id="detailContent" class="content"></div>
+                <div id="detailActions">
+                    <a href="#" class="back-btn" id="backToList">返回列表</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2023 中医方证速查与笔记系统 | 技术支持：Spring Boot + Angular</p>
+        </div>
+    </footer>
+
+    <!-- 笔记对话框 -->
+    <div id="noteDialog" class="note-dialog">
+        <div class="note-dialog-content">
+            <h3>添加笔记</h3>
+            <p id="notePassageTitle"></p>
+            <textarea id="noteContent" class="note-textarea" placeholder="在这里输入您的笔记内容..."></textarea>
+            <div class="note-dialog-buttons">
+                <button class="cancel-btn" onclick="closeNoteDialog()">取消</button>
+                <button class="save-btn" onclick="saveNote()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入auth-check.js文件 -->
+    <script src="/js/auth-check.js"></script>
+
+    <script>
+        // 全局变量
+        let currentPage = 0;
+        let totalPages = 0;
+        let pageSize = 10;
+        let isSearchMode = false;
+        let searchKeyword = '';
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载条文数据
+            loadPassages(currentPage);
+            
+            // 搜索按钮点击事件
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                searchPassages();
+            });
+            
+            // 搜索框回车事件
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchPassages();
+                }
+            });
+            
+            // 返回列表按钮点击事件
+            document.getElementById('backToList').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('passagesList').style.display = 'block';
+                document.getElementById('pagination').style.display = 'flex';
+                document.getElementById('passageDetail').style.display = 'none';
+            });
+        });
+        
+        // 加载条文数据
+        function loadPassages(page) {
+            const passagesList = document.getElementById('passagesList');
+            passagesList.innerHTML = '<div class="loading">正在加载条文数据...</div>';
+            
+            let url = `/api/public/passages?page=${page}&size=${pageSize}`;
+            
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络响应不正常');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 更新全局变量
+                    currentPage = data.currentPage;
+                    totalPages = data.totalPages;
+                    
+                    // 渲染条文列表
+                    renderPassagesList(data);
+                    
+                    // 渲染分页控件
+                    renderPagination();
+                })
+                .catch(error => {
+                    console.error('获取条文数据失败:', error);
+                    passagesList.innerHTML = `<div class="no-results">获取数据失败: ${error.message}</div>`;
+                });
+        }
+        
+        // 搜索条文
+        function searchPassages() {
+            const keyword = document.getElementById('searchInput').value.trim();
+            if (!keyword) {
+                // 如果搜索框为空，恢复到普通浏览模式
+                if (isSearchMode) {
+                    isSearchMode = false;
+                    currentPage = 0;
+                    loadPassages(currentPage);
+                }
+                return;
+            }
+            
+            isSearchMode = true;
+            searchKeyword = keyword;
+            currentPage = 0;
+            
+            const passagesList = document.getElementById('passagesList');
+            passagesList.innerHTML = '<div class="loading">正在搜索条文...</div>';
+            
+            fetch(`/api/public/passages/search?keyword=${encodeURIComponent(keyword)}&page=${currentPage}&size=${pageSize}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络响应不正常');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 更新全局变量
+                    currentPage = data.currentPage;
+                    totalPages = data.totalPages;
+                    
+                    // 渲染条文列表
+                    renderPassagesList(data);
+                    
+                    // 渲染分页控件
+                    renderPagination();
+                })
+                .catch(error => {
+                    console.error('搜索条文失败:', error);
+                    passagesList.innerHTML = `<div class="no-results">搜索失败: ${error.message}</div>`;
+                });
+        }
+        
+        // 渲染条文列表
+        function renderPassagesList(data) {
+            const passagesList = document.getElementById('passagesList');
+            
+            // 清空列表
+            passagesList.innerHTML = '';
+            
+            if (!data.passages || data.passages.length === 0) {
+                passagesList.innerHTML = '<div class="no-results">没有找到相关条文</div>';
+                return;
+            }
+            
+            // 遍历条文数据并创建列表项
+            data.passages.forEach(passage => {
+                const passageItem = document.createElement('div');
+                passageItem.className = 'passage-item';
+                passageItem.dataset.id = passage.id;
+                
+                // 设置条文项的HTML内容
+                passageItem.innerHTML = `
+                    <h3>${passage.title || '无标题'}</h3>
+                    <div class="meta">
+                        <span>来源：${passage.source || '未知'}</span> | 
+                        <span>分类：${passage.category || '未分类'}</span> | 
+                        <span>难度：${getDifficultyText(passage.difficulty)}</span>
+                    </div>
+                    <div class="content-preview">${passage.content || '无内容'}</div>
+                `;
+                
+                // 添加点击事件，显示条文详情
+                passageItem.addEventListener('click', function() {
+                    showPassageDetail(passage.id);
+                });
+                
+                // 将条文项添加到列表中
+                passagesList.appendChild(passageItem);
+            });
+        }
+        
+        // 渲染分页控件
+        function renderPagination() {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            // 如果总页数小于等于1，不显示分页
+            if (totalPages <= 1) {
+                return;
+            }
+            
+            // 上一页按钮
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '上一页';
+            prevButton.disabled = currentPage === 0;
+            prevButton.addEventListener('click', function() {
+                if (currentPage > 0) {
+                    navigateToPage(currentPage - 1);
+                }
+            });
+            pagination.appendChild(prevButton);
+            
+            // 页码按钮
+            // 最多显示5个页码按钮
+            const maxPageButtons = 5;
+            let startPage = Math.max(0, currentPage - Math.floor(maxPageButtons / 2));
+            let endPage = Math.min(totalPages - 1, startPage + maxPageButtons - 1);
+            
+            // 调整startPage，确保显示maxPageButtons个按钮
+            if (endPage - startPage + 1 < maxPageButtons && startPage > 0) {
+                startPage = Math.max(0, endPage - maxPageButtons + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.textContent = i + 1;
+                pageButton.className = i === currentPage ? 'active' : '';
+                pageButton.addEventListener('click', function() {
+                    navigateToPage(i);
+                });
+                pagination.appendChild(pageButton);
+            }
+            
+            // 下一页按钮
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '下一页';
+            nextButton.disabled = currentPage >= totalPages - 1;
+            nextButton.addEventListener('click', function() {
+                if (currentPage < totalPages - 1) {
+                    navigateToPage(currentPage + 1);
+                }
+            });
+            pagination.appendChild(nextButton);
+        }
+        
+        // 页面导航
+        function navigateToPage(page) {
+            if (isSearchMode) {
+                // 搜索模式下的分页
+                const passagesList = document.getElementById('passagesList');
+                passagesList.innerHTML = '<div class="loading">正在搜索条文...</div>';
+                
+                fetch(`/api/public/passages/search?keyword=${encodeURIComponent(searchKeyword)}&page=${page}&size=${pageSize}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        currentPage = data.currentPage;
+                        totalPages = data.totalPages;
+                        renderPassagesList(data);
+                        renderPagination();
+                    })
+                    .catch(error => {
+                        console.error('搜索条文失败:', error);
+                        passagesList.innerHTML = `<div class="no-results">搜索失败: ${error.message}</div>`;
+                    });
+            } else {
+                // 普通浏览模式下的分页
+                loadPassages(page);
+            }
+        }
+        
+        // 显示条文详情
+        function showPassageDetail(id) {
+            fetch(`/api/public/passages/${id}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络响应不正常');
+                    }
+                    return response.json();
+                })
+                .then(passage => {
+                    // 填充详情内容
+                    document.getElementById('detailTitle').textContent = passage.title || '无标题';
+                    document.getElementById('detailSource').textContent = passage.source || '未知';
+                    document.getElementById('detailCategory').textContent = passage.category || '未分类';
+                    document.getElementById('detailDifficulty').textContent = getDifficultyText(passage.difficulty);
+                    document.getElementById('detailContent').textContent = passage.content || '无内容';
+                    
+                    // 更新操作按钮
+                    const actionButtons = document.getElementById('detailActions');
+                    // 保留返回按钮
+                    const backButton = document.getElementById('backToList');
+                    
+                    // 清除旧的按钮（除了返回按钮）
+                    while (actionButtons.firstChild) {
+                        if (actionButtons.firstChild !== backButton) {
+                            actionButtons.removeChild(actionButtons.firstChild);
+                        } else {
+                            // 如果是返回按钮，跳过
+                            actionButtons.appendChild(backButton);
+                            actionButtons.removeChild(actionButtons.firstChild);
+                        }
+                    }
+                    
+                    // 重新添加返回按钮
+                    actionButtons.appendChild(backButton);
+                    
+                    // 添加错题本按钮（仅对已登录用户显示）
+                    if (localStorage.getItem('token')) {
+                        const wrongAnswerBtn = document.createElement('button');
+                        wrongAnswerBtn.className = 'btn btn-warning';
+                        wrongAnswerBtn.style.marginLeft = '10px';
+                        wrongAnswerBtn.textContent = '添加到错题本';
+                        wrongAnswerBtn.onclick = function() {
+                            addToWrongAnswers(passage.id);
+                        };
+                        actionButtons.appendChild(wrongAnswerBtn);
+                        
+                        // 添加笔记按钮
+                        const noteBtn = document.createElement('button');
+                        noteBtn.className = 'btn';
+                        noteBtn.style.marginLeft = '10px';
+                        noteBtn.style.backgroundColor = '#2196F3';
+                        noteBtn.textContent = '添加笔记';
+                        noteBtn.onclick = function() {
+                            showNoteDialog(passage.id, passage.title);
+                        };
+                        actionButtons.appendChild(noteBtn);
+                        
+                        // 记录学习时间
+                        recordStudyTime(passage.id);
+                    }
+                    
+                    // 显示详情区域，隐藏列表
+                    document.getElementById('passagesList').style.display = 'none';
+                    document.getElementById('pagination').style.display = 'none';
+                    document.getElementById('passageDetail').style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('获取条文详情失败:', error);
+                    alert('获取条文详情失败: ' + error.message);
+                });
+        }
+        
+        // 返回列表
+        function backToList() {
+            document.getElementById('passagesList').style.display = 'block';
+            document.getElementById('pagination').style.display = 'flex';
+            document.getElementById('passageDetail').style.display = 'none';
+        }
+        
+        // 添加到错题本
+        function addToWrongAnswers(passageId) {
+            if (!isLoggedIn()) {
+                if (confirm('请先登录后再添加到错题本，是否立即登录？')) {
+                    // 保存当前页面URL，以便登录后返回
+                    localStorage.setItem('redirectAfterLogin', window.location.href);
+                    redirectToLogin();
+                }
+                return;
+            }
+            
+            fetch('/api/wrong-answers', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ passageId: passageId })
+            })
+            .then(response => handleApiResponse(response, '添加到错题本失败', true))
+            .then(data => {
+                alert('已成功添加到错题本');
+            })
+            .catch(error => handleApiError(error, '添加到错题本失败', true, function(err) {
+                // 处理认证错误
+                if (confirm('登录已过期，需要重新登录后才能添加到错题本，是否立即登录？')) {
+                    // 保存当前页面URL，以便登录后返回
+                    localStorage.setItem('redirectAfterLogin', window.location.href);
+                    // 清除认证数据
+                    clearAuthData();
+                    // 跳转到登录页面
+                    redirectToLogin();
+                }
+            }));
+        }
+        
+        // 获取难度文本
+        function getDifficultyText(difficulty) {
+            switch(difficulty) {
+                case 1: return '初级';
+                case 2: return '中级';
+                case 3: return '高级';
+                case 4: return '专家';
+                case 5: return '大师';
+                default: return '未知';
+            }
+        }
+        
+        // 记录学习时间
+        function recordStudyTime(passageId) {
+            // 只有登录用户才记录学习时间
+            if (!isLoggedIn()) {
+                return;
+            }
+            
+            // 调用后端API更新学习记录
+            fetch(`/study-records/update/${passageId}`, {
+                method: 'POST',
+                headers: getAuthHeaders()
+            })
+            .then(response => handleApiResponse(response, '记录学习时间失败', true))
+            .then(data => {
+                console.log('学习时间已记录');
+            })
+            .catch(error => {
+                console.error('记录学习时间失败:', error);
+                // 静默处理错误，不打扰用户阅读
+            });
+        }
+        
+        // 显示笔记对话框
+        let currentPassageId = null;
+        
+        function showNoteDialog(passageId, passageTitle) {
+            // 只有登录用户才能添加笔记
+            if (!isLoggedIn()) {
+                if (confirm('请先登录后再添加笔记，是否立即登录？')) {
+                    // 保存当前页面URL，以便登录后返回
+                    localStorage.setItem('redirectAfterLogin', window.location.href);
+                    redirectToLogin();
+                }
+                return;
+            }
+            
+            currentPassageId = passageId;
+            
+            // 设置对话框标题
+            document.getElementById('notePassageTitle').textContent = `为「${passageTitle}」添加笔记`;
+            
+            // 检查是否已有笔记
+            fetch(`/api/notes/passage/${passageId}`, {
+                headers: getAuthHeaders()
+            })
+            .then(response => handleApiResponse(response, '获取笔记失败', true))
+            .then(data => {
+                const noteContent = document.getElementById('noteContent');
+                if (data && data.length > 0) {
+                    // 如果已有笔记，显示最新的一条
+                    noteContent.value = data[0].content;
+                } else {
+                    // 如果没有笔记，清空输入框
+                    noteContent.value = '';
+                }
+                
+                // 显示对话框
+                const noteDialog = document.getElementById('noteDialog');
+                noteDialog.style.display = 'flex';
+            })
+            .catch(error => {
+                console.error('获取笔记失败:', error);
+                // 如果获取失败，仍然显示空白对话框
+                document.getElementById('noteContent').value = '';
+                document.getElementById('noteDialog').style.display = 'flex';
+            });
+        }
+        
+        // 关闭笔记对话框
+        function closeNoteDialog() {
+            document.getElementById('noteDialog').style.display = 'none';
+            currentPassageId = null;
+        }
+        
+        // 保存笔记
+        function saveNote() {
+            if (!currentPassageId) {
+                alert('保存失败：无法确定条文ID');
+                return;
+            }
+            
+            const content = document.getElementById('noteContent').value.trim();
+            if (!content) {
+                alert('笔记内容不能为空');
+                return;
+            }
+            
+            // 调用后端API保存笔记
+            fetch('/api/notes', {
+                method: 'POST',
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    passageId: currentPassageId,
+                    content: content
+                })
+            })
+            .then(response => handleApiResponse(response, '保存笔记失败', true))
+            .then(data => {
+                alert('笔记保存成功');
+                closeNoteDialog();
+            })
+            .catch(error => {
+                console.error('保存笔记失败:', error);
+                alert('保存笔记失败: ' + error.message);
+            });
+        }
+        
+    </script>
+</body>
+</html>

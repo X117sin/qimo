@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>完整管理员登录测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>完整管理员登录流程测试</h1>
+    
+    <div class="test-section">
+        <h2>当前状态</h2>
+        <div id="currentStatus" class="status">未开始测试</div>
+        <button onclick="checkCurrentState()">检查当前状态</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>1. 清除本地存储</h2>
+        <button onclick="clearStorage()">清除所有本地存储</button>
+        <div id="clearResult" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 管理员登录</h2>
+        <button onclick="adminLogin()">管理员登录</button>
+        <div id="loginResult" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 验证用户信息</h2>
+        <button onclick="checkUserInfo()">检查用户信息</button>
+        <div id="userInfoResult" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. 模拟管理员仪表板认证检查</h2>
+        <button onclick="simulateAdminDashboardAuth()">模拟认证检查</button>
+        <div id="authCheckResult" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. 跳转到管理员仪表板</h2>
+        <button onclick="goToAdminDashboard()">跳转到管理员仪表板</button>
+        <div id="dashboardResult" class="log"></div>
+    </div>
+    
+    <script>
+        function updateStatus(message, isSuccess = true) {
+            const statusDiv = document.getElementById('currentStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + (isSuccess ? 'success' : 'error');
+        }
+        
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            element.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+        }
+        
+        function checkCurrentState() {
+            const token = localStorage.getItem('token');
+            const userJson = localStorage.getItem('user');
+            
+            log('clearResult', '=== 当前状态检查 ===');
+            log('clearResult', `Token: ${token ? '存在' : '不存在'}`);
+            log('clearResult', `用户信息: ${userJson || '不存在'}`);
+            
+            if (token && userJson) {
+                try {
+                    const user = JSON.parse(userJson);
+                    log('clearResult', `用户角色: ${user.role}`, user.role === 'ADMIN' ? 'success' : 'error');
+                    updateStatus(`已登录 - 用户: ${user.username}, 角色: ${user.role}`, user.role === 'ADMIN');
+                } catch (e) {
+                    log('clearResult', '用户信息解析失败', 'error');
+                    updateStatus('用户信息损坏', false);
+                }
+            } else {
+                updateStatus('未登录', false);
+            }
+        }
+        
+        function clearStorage() {
+            localStorage.clear();
+            sessionStorage.clear();
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            log('clearResult', '本地存储已清除', 'success');
+            updateStatus('已清除本地存储');
+        }
+        
+        async function adminLogin() {
+            try {
+                log('loginResult', '开始管理员登录...');
+                updateStatus('正在登录...');
+                
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`登录失败: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                log('loginResult', `登录成功! Token: ${data.token.substring(0, 50)}...`, 'success');
+                log('loginResult', `用户信息: ${JSON.stringify(data.user, null, 2)}`, 'info');
+                log('loginResult', `角色信息: ${data.role}`, 'success');
+                
+                // 保存到本地存储（模拟登录页面的逻辑）
+                localStorage.setItem('token', data.token);
+                
+                // 确保用户对象包含角色信息
+                const userObj = data.user || {};
+                if (data.role && !userObj.role) {
+                    userObj.role = data.role;
+                }
+                
+                localStorage.setItem('user', JSON.stringify(userObj));
+                
+                log('loginResult', '已保存到本地存储', 'success');
+                updateStatus(`登录成功 - ${userObj.username} (${userObj.role})`, true);
+                
+            } catch (error) {
+                log('loginResult', `登录失败: ${error.message}`, 'error');
+                updateStatus('登录失败', false);
+            }
+        }
+        
+        async function checkUserInfo() {
+            try {
+                const token = localStorage.getItem('token');
+                const userJson = localStorage.getItem('user');
+                
+                log('userInfoResult', `本地Token: ${token ? '存在' : '不存在'}`);
+                log('userInfoResult', `本地用户信息: ${userJson || '不存在'}`);
+                
+                if (!token) {
+                    log('userInfoResult', '没有Token，无法验证', 'error');
+                    return;
+                }
+                
+                log('userInfoResult', '验证Token...');
+                const response = await fetch('/api/auth/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`验证失败: ${response.status} ${response.statusText}`);
+                }
+                
+                const user = await response.json();
+                log('userInfoResult', `服务器返回用户信息: ${JSON.stringify(user, null, 2)}`, 'success');
+                
+                if (user.role === 'ADMIN') {
+                    log('userInfoResult', '用户具有管理员权限', 'success');
+                } else {
+                    log('userInfoResult', `用户角色: ${user.role}，不是管理员`, 'error');
+                }
+                
+            } catch (error) {
+                log('userInfoResult', `验证失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function simulateAdminDashboardAuth() {
+            log('authCheckResult', '=== 模拟管理员仪表板认证检查 ===');
+            
+            const token = localStorage.getItem('token');
+            const userJson = localStorage.getItem('user');
+            
+            log('authCheckResult', '检查管理员权限...');
+            log('authCheckResult', `Token: ${token ? '存在' : '不存在'}`);
+            log('authCheckResult', `User info: ${userJson}`);
+            
+            if (!token) {
+                log('authCheckResult', '没有token，应该跳转到登录页面', 'error');
+                return;
+            }
+
+            // 首先检查本地存储的用户信息
+            if (userJson) {
+                try {
+                    const user = JSON.parse(userJson);
+                    log('authCheckResult', `本地用户信息: ${JSON.stringify(user, null, 2)}`);
+                    if (user.role === 'ADMIN') {
+                        log('authCheckResult', '本地验证通过，用户是管理员', 'success');
+                        log('authCheckResult', '应该可以访问管理员仪表板', 'success');
+                        return;
+                    }
+                } catch (e) {
+                    log('authCheckResult', `解析本地用户信息失败: ${e.message}`, 'error');
+                }
+            }
+
+            // 如果本地没有用户信息或角色不是ADMIN，则验证token
+            log('authCheckResult', '验证token...');
+            try {
+                const response = await fetch('/api/auth/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                log('authCheckResult', `认证响应状态: ${response.status}`);
+                if (!response.ok) {
+                    throw new Error('认证失败');
+                }
+                
+                const user = await response.json();
+                log('authCheckResult', `服务器返回用户信息: ${JSON.stringify(user, null, 2)}`);
+                
+                if (user.role !== 'ADMIN') {
+                    log('authCheckResult', '您没有管理员权限，应该跳转到首页', 'error');
+                    return;
+                }
+                
+                // 更新本地存储的用户信息
+                localStorage.setItem('user', JSON.stringify(user));
+                log('authCheckResult', '认证成功，可以访问管理员仪表板', 'success');
+                
+            } catch (error) {
+                log('authCheckResult', `认证错误: ${error.message}`, 'error');
+                log('authCheckResult', '应该清除token并跳转到登录页面', 'error');
+            }
+        }
+        
+        function goToAdminDashboard() {
+            log('dashboardResult', '准备跳转到管理员仪表板...');
+            
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            
+            if (!token) {
+                log('dashboardResult', '没有Token，无法访问管理员仪表板', 'error');
+                return;
+            }
+            
+            log('dashboardResult', 'Token存在，正在跳转...', 'success');
+            
+            // 延迟跳转，让用户看到日志
+            setTimeout(() => {
+                window.location.href = '/admin-dashboard.html';
+            }, 1000);
+        }
+        
+        // 页面加载时检查当前状态
+        window.onload = function() {
+            checkCurrentState();
+        };
+    </script>
+</body>
+</html>
