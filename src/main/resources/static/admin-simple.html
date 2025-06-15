@@ -405,6 +405,37 @@
                 </div>
             </div>
         </div>
+
+        <!-- 条文管理模块 -->
+        <div id="passageManagementContainer" class="management-section" style="display: none;">
+            <div class="section-header">
+                <h3 class="section-title">条文管理</h3>
+                <button class="btn-primary" onclick="openAddPassageModal()">添加条文</button>
+            </div>
+            
+            <div id="passagesTableContainer">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>标题</th>
+                            <th>分类</th>
+                            <th>来源</th>
+                            <th>难度</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="passagesTableBody">
+                        <!-- 条文数据将通过JavaScript动态加载 -->
+                    </tbody>
+                </table>
+                
+                <div id="passagesPagination" class="pagination">
+                    <!-- 分页控件将通过JavaScript动态生成 -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 添加/编辑用户模态框 -->
@@ -441,6 +472,52 @@
                 
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" onclick="closeUserModal()">取消</button>
+                    <button type="submit" class="btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 添加/编辑条文模态框 -->
+    <div id="passageModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="passageModalTitle">添加条文</h4>
+                <span class="close" onclick="closePassageModal()">&times;</span>
+            </div>
+            
+            <form id="passageForm">
+                <div class="form-group">
+                    <label class="form-label" for="passageTitle">标题</label>
+                    <input type="text" id="passageTitle" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="passageContent">内容</label>
+                    <textarea id="passageContent" class="form-input" rows="6" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="passageCategory">分类</label>
+                    <input type="text" id="passageCategory" class="form-input" placeholder="如：方剂、病证等">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="passageSource">来源</label>
+                    <input type="text" id="passageSource" class="form-input" placeholder="如：伤寒论、金匮要略等">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="passageDifficulty">难度</label>
+                    <select id="passageDifficulty" class="form-select" required>
+                        <option value="1">简单</option>
+                        <option value="2">中等</option>
+                        <option value="3">困难</option>
+                    </select>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closePassageModal()">取消</button>
                     <button type="submit" class="btn-primary">保存</button>
                 </div>
             </form>
@@ -514,11 +591,13 @@
                 authStatusEl.innerHTML = '<div style="color: #4caf50; font-weight: bold;">✓ 身份验证成功</div>';
                 document.getElementById('welcomeMessage').textContent = `欢迎，${user.username}`;
                 
-                // 显示统计信息和用户管理
+                // 显示统计信息、用户管理和条文管理
                 document.getElementById('statsContainer').style.display = 'block';
                 document.getElementById('userManagementContainer').style.display = 'block';
+                document.getElementById('passageManagementContainer').style.display = 'block';
                 loadStatistics();
                 loadUsers();
+                loadPassages();
                 
                 authCheckInProgress = false;
             })
@@ -589,6 +668,11 @@
         let currentPage = 0;
         let totalPages = 0;
         let editingUserId = null;
+
+        // 条文管理相关变量
+        let currentPassagePage = 0;
+        let totalPassagePages = 0;
+        let editingPassageId = null;
 
         // 加载用户列表
         function loadUsers(page = 0) {
@@ -811,11 +895,233 @@
             });
         });
 
+        // 条文管理功能
+        
+        // 加载条文列表
+        function loadPassages(page = 0) {
+            const token = localStorage.getItem('token');
+            
+            fetch(`/api/admin/passages?page=${page}&size=10&sort=id,desc`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('获取条文列表失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('条文列表数据:', data);
+                currentPassagePage = data.number;
+                totalPassagePages = data.totalPages;
+                renderPassagesTable(data.content);
+                renderPassagePagination();
+            })
+            .catch(error => {
+                console.error('加载条文列表失败:', error);
+                document.getElementById('passagesTableBody').innerHTML = 
+                    '<tr><td colspan="7" class="error">加载条文列表失败: ' + error.message + '</td></tr>';
+            });
+        }
+
+        // 渲染条文表格
+        function renderPassagesTable(passages) {
+            const tbody = document.getElementById('passagesTableBody');
+            
+            if (!passages || passages.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #666;">暂无条文数据</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = passages.map(passage => {
+                const createdAt = passage.createdAt ? new Date(passage.createdAt).toLocaleString('zh-CN') : '-';
+                const difficultyText = ['', '简单', '中等', '困难'][passage.difficulty] || '未知';
+                const title = passage.title && passage.title.length > 30 ? passage.title.substring(0, 30) + '...' : (passage.title || '-');
+                
+                return `
+                    <tr>
+                        <td>${passage.id}</td>
+                        <td title="${passage.title || ''}">${title}</td>
+                        <td>${passage.category || '-'}</td>
+                        <td>${passage.source || '-'}</td>
+                        <td>${difficultyText}</td>
+                        <td>${createdAt}</td>
+                        <td>
+                            <button class="btn-secondary" onclick="editPassage(${passage.id})">编辑</button>
+                            <button class="btn-danger" onclick="deletePassage(${passage.id}, '${passage.title || ''}')">删除</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 渲染条文分页控件
+        function renderPassagePagination() {
+            const pagination = document.getElementById('passagesPagination');
+            
+            if (totalPassagePages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let paginationHTML = '';
+            
+            // 上一页按钮
+            paginationHTML += `<button ${currentPassagePage === 0 ? 'disabled' : ''} onclick="loadPassages(${currentPassagePage - 1})">上一页</button>`;
+            
+            // 页码按钮
+            for (let i = 0; i < totalPassagePages; i++) {
+                if (i === currentPassagePage) {
+                    paginationHTML += `<button class="active">${i + 1}</button>`;
+                } else {
+                    paginationHTML += `<button onclick="loadPassages(${i})">${i + 1}</button>`;
+                }
+            }
+            
+            // 下一页按钮
+            paginationHTML += `<button ${currentPassagePage === totalPassagePages - 1 ? 'disabled' : ''} onclick="loadPassages(${currentPassagePage + 1})">下一页</button>`;
+            
+            pagination.innerHTML = paginationHTML;
+        }
+
+        // 打开添加条文模态框
+        function openAddPassageModal() {
+            editingPassageId = null;
+            document.getElementById('passageModalTitle').textContent = '添加条文';
+            document.getElementById('passageForm').reset();
+            document.getElementById('passageModal').style.display = 'block';
+        }
+
+        // 编辑条文
+        function editPassage(passageId) {
+            const token = localStorage.getItem('token');
+            
+            fetch(`/api/admin/passages/${passageId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('获取条文信息失败');
+                }
+                return response.json();
+            })
+            .then(passage => {
+                editingPassageId = passageId;
+                document.getElementById('passageModalTitle').textContent = '编辑条文';
+                document.getElementById('passageTitle').value = passage.title || '';
+                document.getElementById('passageContent').value = passage.content || '';
+                document.getElementById('passageCategory').value = passage.category || '';
+                document.getElementById('passageSource').value = passage.source || '';
+                document.getElementById('passageDifficulty').value = passage.difficulty || 1;
+                document.getElementById('passageModal').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('获取条文信息失败:', error);
+                alert('获取条文信息失败: ' + error.message);
+            });
+        }
+
+        // 删除条文
+        function deletePassage(passageId, title) {
+            const displayTitle = title && title.length > 20 ? title.substring(0, 20) + '...' : (title || '此条文');
+            if (!confirm(`确定要删除条文 "${displayTitle}" 吗？此操作不可恢复。`)) {
+                return;
+            }
+            
+            const token = localStorage.getItem('token');
+            
+            fetch(`/api/admin/passages/${passageId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('删除条文失败');
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log('删除条文成功:', result);
+                alert('条文删除成功');
+                loadPassages(currentPassagePage);
+                loadStatistics(); // 重新加载统计信息
+            })
+            .catch(error => {
+                console.error('删除条文失败:', error);
+                alert('删除条文失败: ' + error.message);
+            });
+        }
+
+        // 关闭条文模态框
+        function closePassageModal() {
+            document.getElementById('passageModal').style.display = 'none';
+            editingPassageId = null;
+        }
+
+        // 处理条文表单提交
+        document.getElementById('passageForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                title: document.getElementById('passageTitle').value,
+                content: document.getElementById('passageContent').value,
+                category: document.getElementById('passageCategory').value,
+                source: document.getElementById('passageSource').value,
+                difficulty: parseInt(document.getElementById('passageDifficulty').value)
+            };
+            
+            const token = localStorage.getItem('token');
+            const isEditing = editingPassageId !== null;
+            const url = isEditing ? `/api/admin/passages/${editingPassageId}` : '/api/admin/passages';
+            const method = isEditing ? 'PUT' : 'POST';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(isEditing ? '更新条文失败' : '创建条文失败');
+                }
+                return response.json();
+            })
+            .then(passage => {
+                console.log(isEditing ? '更新条文成功:' : '创建条文成功:', passage);
+                alert(isEditing ? '条文更新成功' : '条文创建成功');
+                closePassageModal();
+                loadPassages(currentPassagePage);
+                loadStatistics(); // 重新加载统计信息
+            })
+            .catch(error => {
+                console.error(isEditing ? '更新条文失败:' : '创建条文失败:', error);
+                alert(error.message);
+            });
+        });
+
         // 点击模态框外部关闭
         window.onclick = function(event) {
-            const modal = document.getElementById('userModal');
-            if (event.target === modal) {
+            const userModal = document.getElementById('userModal');
+            const passageModal = document.getElementById('passageModal');
+            
+            if (event.target === userModal) {
                 closeUserModal();
+            } else if (event.target === passageModal) {
+                closePassageModal();
             }
         };
     </script>
