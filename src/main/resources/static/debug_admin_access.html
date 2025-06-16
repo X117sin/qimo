@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试管理员访问</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .iframe-container {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>调试管理员访问问题</h1>
+    
+    <div class="section">
+        <h2>步骤1: 清除并重新登录</h2>
+        <button onclick="clearAndLogin()">清除存储并重新登录</button>
+        <div id="loginLog" class="log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>步骤2: 检查当前状态</h2>
+        <button onclick="checkCurrentStatus()">检查当前登录状态</button>
+        <div id="statusLog" class="log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>步骤3: 测试管理员API</h2>
+        <button onclick="testAdminAPI()">测试管理员API访问</button>
+        <div id="apiLog" class="log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>步骤4: 在新窗口中打开管理员仪表板</h2>
+        <button onclick="openAdminDashboard()">在新窗口打开管理员仪表板</button>
+        <button onclick="directRedirect()">直接跳转到管理员仪表板</button>
+        <div id="dashboardLog" class="log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>步骤5: 内嵌管理员仪表板（用于调试）</h2>
+        <button onclick="loadDashboardInFrame()">在iframe中加载仪表板</button>
+        <div class="iframe-container" id="iframeContainer" style="display: none;">
+            <iframe id="dashboardFrame" src="about:blank"></iframe>
+        </div>
+    </div>
+    
+    <script>
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            element.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            element.scrollTop = element.scrollHeight;
+        }
+        
+        async function clearAndLogin() {
+            try {
+                log('loginLog', '=== 开始清除并重新登录 ===');
+                
+                // 清除存储
+                localStorage.clear();
+                sessionStorage.clear();
+                log('loginLog', '已清除本地存储', 'success');
+                
+                // 管理员登录
+                log('loginLog', '正在进行管理员登录...');
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`登录失败: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                log('loginLog', `登录成功! 用户: ${data.user.username}, 角色: ${data.role}`, 'success');
+                
+                // 保存到本地存储
+                localStorage.setItem('token', data.token);
+                const userObj = data.user || {};
+                if (data.role && !userObj.role) {
+                    userObj.role = data.role;
+                }
+                localStorage.setItem('user', JSON.stringify(userObj));
+                
+                log('loginLog', '已保存登录信息到本地存储', 'success');
+                log('loginLog', `Token: ${data.token.substring(0, 50)}...`);
+                log('loginLog', `用户信息: ${JSON.stringify(userObj, null, 2)}`);
+                
+            } catch (error) {
+                log('loginLog', `登录失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkCurrentStatus() {
+            try {
+                log('statusLog', '=== 检查当前登录状态 ===');
+                
+                const token = localStorage.getItem('token');
+                const userJson = localStorage.getItem('user');
+                
+                log('statusLog', `Token: ${token ? '存在' : '不存在'}`);
+                log('statusLog', `用户信息: ${userJson || '不存在'}`);
+                
+                if (!token) {
+                    log('statusLog', '没有Token，需要先登录', 'error');
+                    return;
+                }
+                
+                if (userJson) {
+                    try {
+                        const user = JSON.parse(userJson);
+                        log('statusLog', `本地用户: ${user.username}, 角色: ${user.role}`);
+                        if (user.role === 'ADMIN') {
+                            log('statusLog', '本地验证: 用户具有管理员权限', 'success');
+                        } else {
+                            log('statusLog', '本地验证: 用户不是管理员', 'error');
+                        }
+                    } catch (e) {
+                        log('statusLog', `解析用户信息失败: ${e.message}`, 'error');
+                    }
+                }
+                
+                // 验证Token
+                log('statusLog', '正在验证Token...');
+                const response = await fetch('/api/auth/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Token验证失败: ${response.status}`);
+                }
+                
+                const user = await response.json();
+                log('statusLog', `服务器验证成功: ${user.username}, 角色: ${user.role}`, 'success');
+                
+                if (user.role === 'ADMIN') {
+                    log('statusLog', '服务器确认: 用户具有管理员权限', 'success');
+                } else {
+                    log('statusLog', '服务器确认: 用户不是管理员', 'error');
+                }
+                
+            } catch (error) {
+                log('statusLog', `状态检查失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAdminAPI() {
+            try {
+                log('apiLog', '=== 测试管理员API访问 ===');
+                
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    log('apiLog', '没有Token，无法测试API', 'error');
+                    return;
+                }
+                
+                // 测试统计API
+                log('apiLog', '测试 /admin/statistics API...');
+                const statsResponse = await fetch('/admin/statistics', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                log('apiLog', `统计API响应状态: ${statsResponse.status}`);
+                if (statsResponse.ok) {
+                    const stats = await statsResponse.json();
+                    log('apiLog', `统计数据: ${JSON.stringify(stats, null, 2)}`, 'success');
+                } else {
+                    log('apiLog', '统计API访问失败', 'error');
+                }
+                
+                // 测试用户列表API
+                log('apiLog', '测试 /admin/users API...');
+                const usersResponse = await fetch('/admin/users?page=1&size=10', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                log('apiLog', `用户列表API响应状态: ${usersResponse.status}`);
+                if (usersResponse.ok) {
+                    const users = await usersResponse.json();
+                    log('apiLog', `用户列表: 共${users.totalElements}个用户`, 'success');
+                } else {
+                    log('apiLog', '用户列表API访问失败', 'error');
+                }
+                
+            } catch (error) {
+                log('apiLog', `API测试失败: ${error.message}`, 'error');
+            }
+        }
+        
+        function openAdminDashboard() {
+            log('dashboardLog', '在新窗口中打开管理员仪表板...');
+            const newWindow = window.open('/admin-dashboard.html', '_blank');
+            if (newWindow) {
+                log('dashboardLog', '新窗口已打开', 'success');
+            } else {
+                log('dashboardLog', '无法打开新窗口（可能被浏览器阻止）', 'error');
+            }
+        }
+        
+        function directRedirect() {
+            log('dashboardLog', '直接跳转到管理员仪表板...');
+            window.location.href = '/admin-dashboard.html';
+        }
+        
+        function loadDashboardInFrame() {
+            log('dashboardLog', '在iframe中加载管理员仪表板...');
+            const iframe = document.getElementById('dashboardFrame');
+            const container = document.getElementById('iframeContainer');
+            
+            iframe.src = '/admin-dashboard.html';
+            container.style.display = 'block';
+            
+            iframe.onload = function() {
+                log('dashboardLog', 'iframe加载完成', 'success');
+            };
+            
+            iframe.onerror = function() {
+                log('dashboardLog', 'iframe加载失败', 'error');
+            };
+        }
+        
+        // 页面加载时检查状态
+        window.onload = function() {
+            checkCurrentStatus();
+        };
+    </script>
+</body>
+</html>

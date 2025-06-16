@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最简管理员页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: green;
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .error {
+            color: red;
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .info {
+            color: blue;
+            background: #d1ecf1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>最简管理员页面</h1>
+        
+        <div id="authStatus" class="info">正在检查认证状态...</div>
+        
+        <div id="userInfo"></div>
+        
+        <div id="authLog" class="log"></div>
+        
+        <button onclick="retryAuth()">重新检查认证</button>
+        <button onclick="goToLogin()">返回登录页面</button>
+        <button onclick="goToOriginalAdmin()">访问原始管理员页面</button>
+    </div>
+    
+    <script>
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('authLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'success' ? 'green' : type === 'error' ? 'red' : 'blue';
+            logElement.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusElement = document.getElementById('authStatus');
+            statusElement.className = type;
+            statusElement.textContent = message;
+        }
+        
+        function updateUserInfo(user) {
+            const userInfoElement = document.getElementById('userInfo');
+            if (user) {
+                userInfoElement.innerHTML = `
+                    <div class="success">
+                        <h3>用户信息</h3>
+                        <p><strong>用户名:</strong> ${user.username}</p>
+                        <p><strong>角色:</strong> ${user.role}</p>
+                        <p><strong>邮箱:</strong> ${user.email || '未设置'}</p>
+                        <p><strong>ID:</strong> ${user.id}</p>
+                    </div>
+                `;
+            } else {
+                userInfoElement.innerHTML = '';
+            }
+        }
+        
+        async function checkAuth() {
+            try {
+                log('=== 开始认证检查 ===');
+                updateStatus('正在检查认证状态...', 'info');
+                
+                // 1. 检查本地存储
+                const token = localStorage.getItem('token');
+                const userJson = localStorage.getItem('user');
+                
+                log(`Token: ${token ? '存在' : '不存在'}`);
+                log(`用户信息: ${userJson || '不存在'}`);
+                
+                if (!token) {
+                    log('没有Token，需要登录', 'error');
+                    updateStatus('未登录 - 没有找到认证令牌', 'error');
+                    return false;
+                }
+                
+                // 2. 检查本地用户信息
+                let localUser = null;
+                if (userJson) {
+                    try {
+                        localUser = JSON.parse(userJson);
+                        log(`本地用户: ${localUser.username}, 角色: ${localUser.role}`);
+                        
+                        if (localUser.role === 'ADMIN') {
+                            log('本地验证通过: 用户是管理员', 'success');
+                            updateStatus('认证成功 - 您是管理员用户', 'success');
+                            updateUserInfo(localUser);
+                            return true;
+                        } else {
+                            log(`本地验证失败: 用户角色是 ${localUser.role}，不是 ADMIN`, 'error');
+                        }
+                    } catch (e) {
+                        log(`解析本地用户信息失败: ${e.message}`, 'error');
+                    }
+                }
+                
+                // 3. 服务器验证Token
+                log('向服务器验证Token...');
+                const response = await fetch('/api/auth/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                log(`服务器响应状态: ${response.status}`);
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        log('Token已过期或无效', 'error');
+                        updateStatus('认证失败 - 令牌已过期，请重新登录', 'error');
+                        // 清除无效的token
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                    } else {
+                        log(`服务器验证失败: ${response.status} ${response.statusText}`, 'error');
+                        updateStatus(`认证失败 - 服务器错误 (${response.status})`, 'error');
+                    }
+                    return false;
+                }
+                
+                const serverUser = await response.json();
+                log(`服务器返回用户信息: ${JSON.stringify(serverUser, null, 2)}`);
+                
+                if (serverUser.role !== 'ADMIN') {
+                    log(`服务器确认: 用户角色是 ${serverUser.role}，不是管理员`, 'error');
+                    updateStatus('访问被拒绝 - 您没有管理员权限', 'error');
+                    updateUserInfo(serverUser);
+                    return false;
+                }
+                
+                // 4. 更新本地存储
+                localStorage.setItem('user', JSON.stringify(serverUser));
+                log('已更新本地用户信息', 'success');
+                
+                log('服务器验证成功: 用户是管理员', 'success');
+                updateStatus('认证成功 - 您是管理员用户', 'success');
+                updateUserInfo(serverUser);
+                
+                return true;
+                
+            } catch (error) {
+                log(`认证检查出错: ${error.message}`, 'error');
+                updateStatus(`认证检查失败 - ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        function retryAuth() {
+            document.getElementById('authLog').innerHTML = '';
+            checkAuth();
+        }
+        
+        function goToLogin() {
+            window.location.href = '/login.html';
+        }
+        
+        function goToOriginalAdmin() {
+            window.location.href = '/admin-dashboard.html';
+        }
+        
+        // 页面加载时自动检查认证
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+        });
+    </script>
+</body>
+</html>

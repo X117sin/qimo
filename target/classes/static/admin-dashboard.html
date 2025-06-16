@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员后台 - 中医方证速查与笔记系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-user span {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .btn-logout {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            height: fit-content;
+        }
+
+        .sidebar h3 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar li {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 1rem;
+            color: #666;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .content {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .content h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .table-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .table th,
+        .table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .pagination button {
+            background: white;
+            border: 2px solid #e1e5e9;
+            color: #666;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination button:hover,
+        .pagination button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .footer {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            padding: 2rem;
+            color: white;
+        }
+
+        .footer p {
+            margin: 0;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                padding: 1rem;
+            }
+
+            .sidebar {
+                width: 100%;
+                margin-bottom: 1rem;
+            }
+
+            .nav-container {
+                padding: 0 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/index.html" class="logo">中医方证速查系统</a>
+            <div class="nav-user">
+                <span id="welcomeMessage">欢迎，管理员</span>
+                <button class="btn-logout" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <h3>管理菜单</h3>
+            <ul>
+                <li><a href="#" onclick="showSection('overview')" class="active">系统概览</a></li>
+                <li><a href="#" onclick="showSection('users')">用户管理</a></li>
+                <li><a href="#" onclick="showSection('passages')">条文管理</a></li>
+                <li><a href="#" onclick="showSection('settings')">系统设置</a></li>
+            </ul>
+        </aside>
+
+        <main class="content">
+            <!-- 系统概览 -->
+            <div id="overview" class="content-section active">
+                <h2>系统概览</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3 id="totalUsers">0</h3>
+                        <p>总用户数</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="totalPassages">0</h3>
+                        <p>总条文数</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="totalNotes">0</h3>
+                        <p>总笔记数</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="totalErrors">0</h3>
+                        <p>总错题数</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户管理 -->
+            <div id="users" class="content-section">
+                <h2>用户管理</h2>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>邮箱</th>
+                                <th>角色</th>
+                                <th>注册时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- 用户数据将通过JavaScript动态加载 -->
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="usersPagination">
+                        <!-- 分页按钮将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 条文管理 -->
+            <div id="passages" class="content-section">
+                <h2>条文管理</h2>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>条文号</th>
+                                <th>内容</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="passagesTableBody">
+                            <!-- 条文数据将通过JavaScript动态加载 -->
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="passagesPagination">
+                        <!-- 分页按钮将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统设置 -->
+            <div id="settings" class="content-section">
+                <h2>系统设置</h2>
+                <p>系统设置功能正在开发中...</p>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <p>© 2023 中医方证速查与笔记系统 | 技术支持：Spring Boot + Angular</p>
+    </footer>
+
+    <script>
+        // 全局变量
+        let currentUsersPage = 1;
+        let currentPassagesPage = 1;
+        const pageSize = 10;
+
+        // 页面加载时执行
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAdminAuth();
+            loadStats();
+            loadUsers(1);
+            loadPassages(1);
+        });
+
+        // 检查管理员权限
+        function checkAdminAuth() {
+            const token = localStorage.getItem('token');
+            const userJson = localStorage.getItem('user');
+            
+            console.log('检查管理员权限...');
+            console.log('Token:', token ? '存在' : '不存在');
+            console.log('User info:', userJson);
+            
+            if (!token) {
+                console.log('没有token，跳转到登录页面');
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // 总是验证token的有效性，不依赖本地存储的用户信息
+            console.log('验证token...');
+            
+            // 如果有本地用户信息，先显示欢迎消息，但仍需验证token
+            if (userJson) {
+                try {
+                    const user = JSON.parse(userJson);
+                    console.log('本地用户信息:', user);
+                    if (user.role === 'ADMIN') {
+                        updateWelcomeMessage(user.username);
+                    }
+                } catch (e) {
+                    console.error('解析本地用户信息失败:', e);
+                }
+            }
+            fetch('/api/auth/me', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => {
+                console.log('认证响应状态:', response.status);
+                if (!response.ok) {
+                    throw new Error('认证失败');
+                }
+                return response.json();
+            })
+            .then(user => {
+                console.log('服务器返回用户信息:', user);
+                if (user.role !== 'ADMIN') {
+                    alert('您没有管理员权限');
+                    window.location.href = '/index.html';
+                    return;
+                }
+                // 更新本地存储的用户信息
+                localStorage.setItem('user', JSON.stringify(user));
+                updateWelcomeMessage(user.username);
+            })
+            .catch(error => {
+                console.error('认证错误:', error);
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login.html';
+            });
+        }
+
+        // 更新欢迎消息
+        function updateWelcomeMessage(username) {
+            document.getElementById('welcomeMessage').textContent = `欢迎，${username}`;
+        }
+
+        // 加载统计数据
+        function loadStats() {
+            const token = localStorage.getItem('token');
+            
+            fetch('/admin/statistics', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => response.json())
+            .then(stats => {
+                document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
+                document.getElementById('totalPassages').textContent = stats.totalPassages || 0;
+                document.getElementById('totalNotes').textContent = stats.totalNotes || 0;
+                document.getElementById('totalErrors').textContent = stats.totalErrors || 0;
+            })
+            .catch(error => {
+                console.error('加载统计数据失败:', error);
+            });
+        }
+
+        // 设置全局请求拦截器
+        function setupGlobalInterceptor() {
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                return originalFetch.apply(this, args)
+                    .then(response => {
+                        if (response.status === 401) {
+                            localStorage.removeItem('token');
+                            window.location.href = '/login.html';
+                        }
+                        return response;
+                    });
+            };
+        }
+
+        // 显示指定的内容区域
+        function showSection(sectionId) {
+            // 隐藏所有内容区域
+            const sections = document.querySelectorAll('.content-section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // 显示指定的内容区域
+            document.getElementById(sectionId).classList.add('active');
+
+            // 更新侧边栏活动状态
+            const links = document.querySelectorAll('.sidebar a');
+            links.forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login.html';
+        }
+
+        // 加载用户列表
+        function loadUsers(page) {
+            const token = localStorage.getItem('token');
+            currentUsersPage = page;
+            
+            fetch(`/admin/users?page=${page}&size=${pageSize}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = '';
+                
+                data.content.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.username}</td>
+                        <td>${user.email}</td>
+                        <td>${user.role}</td>
+                        <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn" onclick="editUser(${user.id})">编辑</button>
+                            <button class="btn btn-danger" onclick="deleteUser(${user.id})">删除</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // 生成分页按钮
+                generatePagination('usersPagination', data.totalPages, page, loadUsers);
+            })
+            .catch(error => {
+                console.error('加载用户列表失败:', error);
+            });
+        }
+
+        // 加载条文列表
+        function loadPassages(page) {
+            const token = localStorage.getItem('token');
+            currentPassagesPage = page;
+            
+            fetch(`/admin/passages?page=${page}&size=${pageSize}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('passagesTableBody');
+                tbody.innerHTML = '';
+                
+                data.content.forEach(passage => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${passage.id}</td>
+                        <td>${passage.number}</td>
+                        <td>${passage.content.substring(0, 50)}...</td>
+                        <td>${new Date(passage.createdAt).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn" onclick="editPassage(${passage.id})">编辑</button>
+                            <button class="btn btn-danger" onclick="deletePassage(${passage.id})">删除</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // 生成分页按钮
+                generatePagination('passagesPagination', data.totalPages, page, loadPassages);
+            })
+            .catch(error => {
+                console.error('加载条文列表失败:', error);
+            });
+        }
+
+        // 生成分页按钮
+        function generatePagination(containerId, totalPages, currentPage, loadFunction) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            // 上一页按钮
+            if (currentPage > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.textContent = '上一页';
+                prevBtn.onclick = () => loadFunction(currentPage - 1);
+                container.appendChild(prevBtn);
+            }
+            
+            // 页码按钮
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => loadFunction(i);
+                if (i === currentPage) {
+                    pageBtn.classList.add('active');
+                }
+                container.appendChild(pageBtn);
+            }
+            
+            // 下一页按钮
+            if (currentPage < totalPages) {
+                const nextBtn = document.createElement('button');
+                nextBtn.textContent = '下一页';
+                nextBtn.onclick = () => loadFunction(currentPage + 1);
+                container.appendChild(nextBtn);
+            }
+        }
+
+        // 添加用户（占位符）
+        function addUser() {
+            // TODO: 实现添加用户功能
+            alert('添加用户功能正在开发中');
+        }
+
+        // 添加条文（占位符）
+        function addPassage() {
+            // TODO: 实现添加条文功能
+            alert('添加条文功能正在开发中');
+        }
+
+        // 编辑用户（占位符）
+        function editUser(userId) {
+            // TODO: 实现编辑用户功能
+            alert(`编辑用户 ${userId} 功能正在开发中`);
+        }
+
+        // 编辑条文（占位符）
+        function editPassage(passageId) {
+            // TODO: 实现编辑条文功能
+            alert(`编辑条文 ${passageId} 功能正在开发中`);
+        }
+
+        // 删除用户
+        function deleteUser(userId) {
+            if (confirm('确定要删除这个用户吗？')) {
+                const token = localStorage.getItem('token');
+                
+                fetch(`/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('用户删除成功');
+                        loadUsers(currentUsersPage);
+                        loadStats(); // 重新加载统计数据
+                    } else {
+                        alert('删除用户失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除用户失败:', error);
+                    alert('删除用户失败');
+                });
+            }
+        }
+
+        // 删除条文
+        function deletePassage(passageId) {
+            if (confirm('确定要删除这个条文吗？')) {
+                const token = localStorage.getItem('token');
+                
+                fetch(`/admin/passages/${passageId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('条文删除成功');
+                        loadPassages(currentPassagesPage);
+                        loadStats(); // 重新加载统计数据
+                    } else {
+                        alert('删除条文失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除条文失败:', error);
+                    alert('删除条文失败');
+                });
+            }
+        }
+
+        // 初始化
+        setupGlobalInterceptor();
+    </script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 中医方证速查与笔记系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container {
+            display: flex;
+            width: 900px;
+            max-width: 90vw;
+            height: 600px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .login-left {
+            flex: 1;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            padding: 40px;
+            position: relative;
+        }
+        
+        .login-left::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="white" opacity="0.1"/><circle cx="80" cy="30" r="1.5" fill="white" opacity="0.1"/><circle cx="40" cy="70" r="1" fill="white" opacity="0.1"/><circle cx="90" cy="80" r="2.5" fill="white" opacity="0.1"/></svg>') repeat;
+            animation: float 20s infinite linear;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .logo-section {
+            text-align: center;
+            z-index: 1;
+        }
+        
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 36px;
+        }
+        
+        .logo-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+        
+        .login-right {
+            flex: 1;
+            padding: 60px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .login-title {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .login-subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+        .form-input::placeholder {
+            color: #adb5bd;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .form-footer {
+            text-align: center;
+            color: #666;
+        }
+        
+        .form-footer a {
+            color: #4facfe;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+        
+        .alert-danger {
+            background-color: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+        }
+        
+        .back-home {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-home:hover {
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+                height: auto;
+                width: 95vw;
+            }
+            
+            .login-left {
+                padding: 30px 20px;
+            }
+            
+            .login-right {
+                padding: 40px 30px;
+            }
+            
+            .logo-title {
+                font-size: 24px;
+            }
+            
+            .login-title {
+                font-size: 28px;
+            }
+        }
+    </style>
+    <script src="/js/auth-utils.js"></script>
+</head>
+<body>
+    <a href="/index.html" class="back-home">
+        ← 返回首页
+    </a>
+    
+    <div class="login-container">
+        <div class="login-left">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    🏥
+                </div>
+                <h1 class="logo-title">开箱即用的中医台管理系统</h1>
+                <p class="logo-subtitle">
+                    集成了中医方证速查、学习笔记管理等功能<br>
+                    助力中医学习者提升学习效率
+                </p>
+            </div>
+        </div>
+        
+        <div class="login-right">
+            <div class="login-header">
+                <h2 class="login-title">登录</h2>
+                <p class="login-subtitle">欢迎回来</p>
+            </div>
+            
+            <form id="loginForm">
+                <div id="loginAlert" class="alert alert-danger"></div>
+                
+                <div class="form-group">
+                    <input type="text" id="username" name="username" class="form-input" placeholder="请输入用户名" required>
+                </div>
+                
+                <div class="form-group">
+                    <input type="password" id="password" name="password" class="form-input" placeholder="请输入密码" required>
+                </div>
+                
+                <button type="submit" class="login-btn">登录</button>
+                
+                <div class="form-footer">
+                    <p>还没有账号？<a href="/register.html">立即注册</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/auth-utils.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const alertBox = document.getElementById('loginAlert');
+            
+            // 清除之前的错误信息
+            alertBox.style.display = 'none';
+            alertBox.textContent = '';
+            
+            console.log('准备发送登录请求...');
+            console.log('请求数据:', JSON.stringify({
+                username: username,
+                password: password
+            }));
+            
+            // 发送登录请求
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                }),
+                credentials: 'include' // 确保包含cookies
+            })
+            .then(response => {
+                console.log('收到响应:', response.status, response.statusText);
+                console.log('响应头:', response.headers);
+                
+                // 记录所有响应头
+                response.headers.forEach((value, name) => {
+                    console.log(`${name}: ${value}`);
+                });
+                
+                // 先检查响应状态
+                if (!response.ok) {
+                    console.error('响应不成功:', response.status, response.statusText);
+                    
+                    // 如果响应不成功，尝试解析JSON响应
+                    return response.text().then(text => {
+                        console.log('错误响应内容:', text);
+                        
+                        // 尝试将响应解析为JSON
+                        try {
+                            if (text && text.trim()) {
+                                const data = JSON.parse(text);
+                                console.error('解析后的错误信息:', data);
+                                throw new Error(data.message || '登录失败，请检查用户名和密码');
+                            } else {
+                                throw new Error('登录失败，服务器返回回应为空');
+                            }
+                        } catch (e) {
+                            if (e instanceof SyntaxError) {
+                                // JSON解析错误
+                                console.error('响应解析错误:', text);
+                                throw new Error('登录失败，服务器返回无效响应');
+                            }
+                            throw e; // 重新抛出其他错误
+                        }
+                    });
+                }
+                
+                // 如果响应成功，解析JSON
+                console.log('响应成功，准备解析JSON');
+                return response.text().then(text => {
+                    if (!text || !text.trim()) {
+                        throw new Error('登录失败，服务器返回回应为空');
+                    }
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('响应解析错误:', text);
+                        throw new Error('无法解析服务器响应');
+                    }
+                });
+            })
+            .then(data => {
+                console.log('登录成功，收到数据:', data);
+                
+                // 确保令牌存在
+                if (!data.token) {
+                    throw new Error('服务器未返回有效的认证令牌');
+                }
+                
+                // 保存令牌到本地存储和Cookie
+                setAuthToken(data.token);
+                
+                // 确保用户对象包含角色信息
+                const userObj = data.user || {};
+                if (data.role && !userObj.role) {
+                    userObj.role = data.role;
+                }
+                
+                localStorage.setItem('user', JSON.stringify(userObj));
+                console.log('已保存到localStorage:', {
+                    token: data.token,
+                    user: userObj
+                });
+                
+                console.log('登录成功，用户信息：', userObj);
+                console.log('用户角色：', userObj.role);
+                console.log('JWT令牌：', data.token);
+                
+                // 设置一个Cookie，以防localStorage不可用
+                document.cookie = `token=${data.token}; path=/; max-age=86400`;
+                console.log('已设置cookie');
+                console.log('当前所有cookie:', document.cookie);
+                
+                // 检查是否有登录后重定向URL
+                const redirectUrl = localStorage.getItem('redirectAfterLogin');
+                if (redirectUrl) {
+                    // 清除重定向URL
+                    localStorage.removeItem('redirectAfterLogin');
+                    // 跳转回之前的页面
+                    window.location.href = redirectUrl;
+                } else {
+                    // 根据用户角色跳转到不同页面
+                    if (userObj.role === 'ADMIN') {
+                        // 管理员跳转到简化的管理员页面
+                        console.log('管理员登录成功，正在跳转到管理员后台...');
+                        window.location.href = '/admin-simple.html';
+                    } else {
+                        // 普通用户跳转到条文库列表页面
+                        console.log('普通用户登录成功，正在跳转到条文库...');
+                        window.location.href = '/passages.html';
+                    }
+                }
+            })
+            .catch(error => {
+                // 显示错误信息
+                alertBox.textContent = error.message;
+                alertBox.style.display = 'block';
+            });
+        });
+    </script>
+</body>
+</html>

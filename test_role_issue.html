@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Role Issue</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; white-space: pre-wrap; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Role Issue Debug</h1>
+    
+    <button onclick="testFullFlow()">Test Complete Login Flow</button>
+    <button onclick="clearAll()">Clear All Data</button>
+    
+    <div id="log" class="log"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : '';
+            logDiv.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+        }
+
+        function clearAll() {
+            localStorage.clear();
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            document.getElementById('log').innerHTML = '';
+            log('All data cleared', 'success');
+        }
+
+        async function testFullFlow() {
+            try {
+                log('=== Starting Complete Login Flow Test ===');
+                
+                // Step 1: Clear existing data
+                localStorage.clear();
+                log('1. Cleared localStorage');
+                
+                // Step 2: Login
+                log('2. Attempting login...');
+                const loginResponse = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+
+                if (!loginResponse.ok) {
+                    throw new Error(`Login failed: ${loginResponse.status}`);
+                }
+
+                const loginData = await loginResponse.json();
+                log(`3. Login successful!`, 'success');
+                log(`   Token: ${loginData.token.substring(0, 50)}...`);
+                log(`   User: ${JSON.stringify(loginData.user)}`);
+                log(`   User Role: "${loginData.user.role}" (type: ${typeof loginData.user.role})`);
+                
+                // Step 3: Save data exactly like login.html does
+                localStorage.setItem('token', loginData.token);
+                localStorage.setItem('user', JSON.stringify(loginData.user));
+                document.cookie = `token=${loginData.token}; path=/; max-age=86400`;
+                log('4. Saved token and user data to localStorage and cookie', 'success');
+                
+                // Step 4: Verify saved data
+                const savedToken = localStorage.getItem('token');
+                const savedUser = localStorage.getItem('user');
+                log(`5. Verification:`);
+                log(`   Saved token exists: ${!!savedToken}`);
+                log(`   Saved user: ${savedUser}`);
+                
+                if (savedUser) {
+                    const userObj = JSON.parse(savedUser);
+                    log(`   Parsed user role: "${userObj.role}" (type: ${typeof userObj.role})`);
+                    log(`   Role === 'ADMIN': ${userObj.role === 'ADMIN'}`);
+                    log(`   Role === 'ROLE_ADMIN': ${userObj.role === 'ROLE_ADMIN'}`);
+                }
+                
+                // Step 5: Test /api/auth/me endpoint
+                log('6. Testing /api/auth/me endpoint...');
+                const meResponse = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${loginData.token}`
+                    }
+                });
+                
+                if (meResponse.ok) {
+                    const meData = await meResponse.json();
+                    log(`7. /api/auth/me response:`, 'success');
+                    log(`   ${JSON.stringify(meData)}`);
+                    log(`   Role: "${meData.role}" (type: ${typeof meData.role})`);
+                    log(`   Role === 'ADMIN': ${meData.role === 'ADMIN'}`);
+                    log(`   Role === 'ROLE_ADMIN': ${meData.role === 'ROLE_ADMIN'}`);
+                } else {
+                    log(`7. /api/auth/me failed: ${meResponse.status}`, 'error');
+                }
+                
+                // Step 6: Simulate admin dashboard check
+                log('8. Simulating admin dashboard check...');
+                const checkResult = simulateAdminCheck();
+                log(`   Check result: ${checkResult}`, checkResult ? 'success' : 'error');
+                
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function simulateAdminCheck() {
+            const token = localStorage.getItem('token');
+            const userJson = localStorage.getItem('user');
+            
+            log('   Checking token...');
+            if (!token) {
+                log('   No token found - would redirect to login', 'error');
+                return false;
+            }
+            
+            log('   Checking local user data...');
+            if (userJson) {
+                try {
+                    const user = JSON.parse(userJson);
+                    log(`   Local user: ${JSON.stringify(user)}`);
+                    log(`   Local user role: "${user.role}"`);
+                    log(`   Role check: ${user.role} === 'ADMIN' = ${user.role === 'ADMIN'}`);
+                    
+                    if (user.role === 'ADMIN') {
+                        log('   Local check PASSED - user is ADMIN', 'success');
+                        return true;
+                    } else {
+                        log(`   Local check FAILED - role is "${user.role}", not "ADMIN"`, 'error');
+                        return false;
+                    }
+                } catch (e) {
+                    log(`   Failed to parse local user data: ${e.message}`, 'error');
+                }
+            } else {
+                log('   No local user data found', 'error');
+            }
+            
+            return false;
+        }
+    </script>
+</body>
+</html>

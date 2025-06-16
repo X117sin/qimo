@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试Admin登录流程</title>
+</head>
+<body>
+    <h1>测试Admin登录流程</h1>
+    <button onclick="testLogin()">测试登录</button>
+    <button onclick="testAdminDashboard()">测试管理员仪表板</button>
+    <button onclick="clearStorage()">清除存储</button>
+    <div id="result"></div>
+
+    <script>
+        function log(message) {
+            const result = document.getElementById('result');
+            result.innerHTML += '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>';
+            console.log(message);
+        }
+
+        function testLogin() {
+            log('开始测试登录...');
+            
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: 'admin',
+                    password: 'admin123'
+                })
+            })
+            .then(response => {
+                log('登录响应状态: ' + response.status);
+                return response.json();
+            })
+            .then(data => {
+                log('登录成功，收到数据: ' + JSON.stringify(data));
+                
+                // 保存token和用户信息
+                localStorage.setItem('token', data.token);
+                
+                const userObj = data.user || {};
+                if (data.role && !userObj.role) {
+                    userObj.role = data.role;
+                }
+                
+                localStorage.setItem('user', JSON.stringify(userObj));
+                log('已保存到localStorage - Token: ' + data.token);
+                log('已保存到localStorage - User: ' + JSON.stringify(userObj));
+            })
+            .catch(error => {
+                log('登录失败: ' + error.message);
+            });
+        }
+
+        function testAdminDashboard() {
+            log('测试访问管理员仪表板...');
+            
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            
+            log('当前Token: ' + (token ? '存在' : '不存在'));
+            log('当前User: ' + user);
+            
+            if (token && user) {
+                const userObj = JSON.parse(user);
+                log('用户角色: ' + userObj.role);
+                
+                if (userObj.role === 'ADMIN') {
+                    log('用户是管理员，可以访问仪表板');
+                    // 模拟跳转
+                    log('模拟跳转到 /admin-dashboard.html');
+                } else {
+                    log('用户不是管理员，无法访问仪表板');
+                }
+            } else {
+                log('没有认证信息，需要先登录');
+            }
+        }
+
+        function clearStorage() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            log('已清除本地存储');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错题本 - 中医方证速查与笔记系统</title>
+    <script src="/js/auth-utils.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        /* 导航栏样式 */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .user-name {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .nav-btn.secondary {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .nav-btn.secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* 主容器样式 */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .page-subtitle {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 300;
+        }
+        
+        /* 内容卡片样式 */
+        .content-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .content-header {
+            margin-bottom: 2rem;
+        }
+        
+        .content-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .content-description {
+            color: #666;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        /* 操作栏样式 */
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* 错题列表样式 */
+        .error-list {
+            margin-top: 1rem;
+        }
+        
+        .error-item {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .error-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .error-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .error-item h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+            flex: 1;
+            padding-right: 1rem;
+        }
+        
+        .error-count {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 0 3px 10px rgba(255, 107, 107, 0.3);
+        }
+        
+        .error-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 10px;
+        }
+        
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .meta-label {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        
+        .meta-value {
+            font-size: 0.95rem;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .passage-content {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+            line-height: 1.6;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+        
+        /* 分页样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+            padding: 1rem;
+        }
+        
+        .pagination button {
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            min-width: 45px;
+        }
+        
+        .pagination button:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .pagination button.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* 空状态样式 */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #666;
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+        
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .empty-description {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        /* 加载状态样式 */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+        
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .nav-container {
+                padding: 0 1rem;
+            }
+            
+            .nav-brand {
+                font-size: 1.2rem;
+            }
+            
+            .nav-user {
+                gap: 0.5rem;
+            }
+            
+            .user-avatar {
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
+            }
+            
+            .main-container {
+                padding: 1rem;
+            }
+            
+            .page-title {
+                font-size: 2rem;
+            }
+            
+            .content-card {
+                padding: 1.5rem;
+                border-radius: 15px;
+            }
+            
+            .actions-bar {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+            
+            .error-meta {
+                grid-template-columns: 1fr;
+            }
+            
+            .error-actions {
+                flex-direction: column;
+            }
+            
+            .pagination {
+                flex-wrap: wrap;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .page-title {
+                font-size: 1.8rem;
+            }
+            
+            .content-card {
+                padding: 1rem;
+            }
+            
+            .error-item {
+                padding: 1rem;
+            }
+            
+            .error-item-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .error-count {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 现代化导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/dashboard.html" class="nav-brand">中医方证速查系统</a>
+            <div class="nav-user">
+                <div class="user-avatar" id="userAvatar"></div>
+                <span class="user-name" id="userName">用户</span>
+                <a href="/dashboard.html" class="nav-btn secondary">个人中心</a>
+                <button id="logoutBtn" class="nav-btn">退出登录</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主容器 -->
+    <div class="main-container">
+        <!-- 页面标题 -->
+        <div class="page-header">
+            <h1 class="page-title">我的错题本</h1>
+            <p class="page-subtitle">记录学习过程中的错误，重点复习提高掌握程度</p>
+        </div>
+
+        <!-- 内容卡片 -->
+        <div class="content-card">
+            <div class="content-header">
+                <h2 class="content-title">错题记录</h2>
+                <p class="content-description">这里记录了您在学习过程中答错的条文，可以重点复习以提高掌握程度。</p>
+            </div>
+            
+            <div class="actions-bar">
+                <div>
+                    <a href="/passages.html" class="btn btn-secondary">📚 返回条文列表</a>
+                </div>
+                <div>
+                    <button id="clearAllBtn" class="btn btn-danger">🗑️ 清空错题本</button>
+                </div>
+            </div>
+            
+            <div id="errorList" class="error-list">
+                <div class="loading">正在加载错题记录</div>
+            </div>
+            
+            <div id="pagination" class="pagination">
+                <!-- 分页控件将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入auth-check.js进行登录状态检查 -->
+    <script src="/js/auth-check.js"></script>
+    
+    <script>
+        // 当前页码和每页显示数量
+        let currentPage = 0;
+        const pageSize = 5;
+        let totalPages = 0;
+        
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 更新用户显示信息
+            updateUserDisplay();
+            
+            // 加载错题记录
+            loadWrongAnswers(currentPage, pageSize);
+            
+            // 绑定清空错题本按钮事件
+            document.getElementById('clearAllBtn').addEventListener('click', function() {
+                if (confirm('确定要清空所有错题记录吗？此操作不可恢复！')) {
+                    clearAllWrongAnswers();
+                }
+            });
+            
+            // 绑定退出登录按钮事件
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/index.html';
+            });
+        });
+        
+        // 更新用户显示信息
+        function updateUserDisplay() {
+            const userJson = localStorage.getItem('user');
+            if (userJson) {
+                try {
+                    const user = JSON.parse(userJson);
+                    const userNameElement = document.getElementById('userName');
+                    const userAvatarElement = document.getElementById('userAvatar');
+                    
+                    if (userNameElement) {
+                        userNameElement.textContent = user.username;
+                    }
+                    
+                    if (userAvatarElement) {
+                        userAvatarElement.textContent = user.username.charAt(0).toUpperCase();
+                    }
+                } catch (e) {
+                    console.error('解析用户信息失败:', e);
+                }
+            }
+        }
+        
+        // 加载错题记录
+        function loadWrongAnswers(page, size) {
+            if (!isLoggedIn()) {
+                redirectToLogin();
+                return;
+            }
+            
+            const errorList = document.getElementById('errorList');
+            errorList.innerHTML = '<div class="loading">正在加载错题记录...</div>';
+            
+            fetch(`/api/wrong-answers?page=${page}&size=${size}`, {
+                method: 'GET',
+                headers: getAuthHeaders()
+            })
+            .then(response => handleApiResponse(response, '获取错题记录失败'))
+            .then(data => {
+                // 更新当前页码和总页数
+                currentPage = data.currentPage;
+                totalPages = data.totalPages;
+                
+                // 渲染错题列表
+                renderWrongAnswers(data.wrongAnswers);
+                
+                // 渲染分页控件
+                renderPagination(currentPage, totalPages);
+            })
+            .catch(error => {
+                console.error('获取错题记录失败:', error);
+                errorList.innerHTML = `<div class="empty-state">获取错题记录失败: ${error.message}</div>`;
+                handleApiError(error, '获取错题记录失败');
+            });
+        }
+    
+    // 渲染错题列表
+    function renderWrongAnswers(wrongAnswers) {
+        const errorList = document.getElementById('errorList');
+        
+        if (!wrongAnswers || wrongAnswers.length === 0) {
+            errorList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📚</div>
+                    <div class="empty-title">您的错题本还是空的</div>
+                    <div class="empty-description">在学习条文时，答错的题目会自动添加到这里<br>开始学习，积累经验吧！</div>
+                    <a href="/passages.html" class="btn btn-primary">📖 开始学习条文</a>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        
+        wrongAnswers.forEach(item => {
+            const lastWrongDate = new Date(item.lastWrongAt).toLocaleString();
+            const contentPreview = item.passageContent ? 
+                (item.passageContent.length > 100 ? 
+                    item.passageContent.substring(0, 100) + '...' : 
+                    item.passageContent) : '无内容';
+            
+            html += `
+                <div class="error-item" data-id="${item.id}">
+                    <div class="error-item-header">
+                        <h3>${item.passageTitle || '未知条文'}</h3>
+                        <div class="error-count">${item.timesWrong}</div>
+                    </div>
+                    
+                    <div class="error-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">最近错误时间</span>
+                            <span class="meta-value">${lastWrongDate}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">累计错误次数</span>
+                            <span class="meta-value">${item.timesWrong} 次</span>
+                        </div>
+                    </div>
+                    
+                    <div class="passage-content">
+                        ${contentPreview}
+                    </div>
+                    
+                    <div class="error-actions">
+                        <a href="/passages.html?id=${item.passageId}" class="btn btn-primary">🔄 重新学习</a>
+                        <button class="btn btn-danger delete-btn" data-id="${item.id}">❌ 移除</button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        errorList.innerHTML = html;
+        
+        // 绑定删除按钮事件
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                if (confirm('确定要从错题本中移除此条文吗？\n移除后将不再显示在错题本中。')) {
+                    deleteWrongAnswer(id);
+                }
+            });
+        });
+    }
+    
+    // 渲染分页控件
+    function renderPagination(currentPage, totalPages) {
+        const pagination = document.getElementById('pagination');
+        
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+        
+        let html = '';
+        
+        // 上一页按钮
+        html += `<button ${currentPage === 0 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">上一页</button>`;
+        
+        // 页码按钮
+        const startPage = Math.max(0, currentPage - 2);
+        const endPage = Math.min(totalPages - 1, currentPage + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            html += `<button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i + 1}</button>`;
+        }
+        
+        // 下一页按钮
+        html += `<button ${currentPage === totalPages - 1 ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">下一页</button>`;
+        
+        pagination.innerHTML = html;
+    }
+    
+    // 切换页码
+    function changePage(page) {
+        if (page < 0 || page >= totalPages) return;
+        currentPage = page;
+        loadWrongAnswers(currentPage, pageSize);
+    }
+    
+    // 删除单个错题记录
+    // 删除单个错题记录
+    function deleteWrongAnswer(id) {
+        if (!isLoggedIn()) {
+            redirectToLogin();
+            return;
+        }
+        
+        fetch(`/api/wrong-answers/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        })
+        .then(response => handleApiResponse(response, '删除错题记录失败'))
+        .then(() => {
+            // 重新加载当前页的错题记录
+            loadWrongAnswers(currentPage, pageSize);
+        })
+        .catch(error => handleApiError(error, '删除错题记录失败'));
+    }
+    
+    // 清空所有错题记录
+    function clearAllWrongAnswers() {
+        if (!isLoggedIn()) {
+            redirectToLogin();
+            return;
+        }
+        
+        fetch('/api/wrong-answers/clear-all', {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        })
+        .then(response => handleApiResponse(response, '清空错题记录失败'))
+        .then(() => {
+            // 重新加载第一页的错题记录
+            currentPage = 0;
+            loadWrongAnswers(currentPage, pageSize);
+        })
+        .catch(error => handleApiError(error, '清空错题记录失败'));
+    }
+    </script>
+</body>
+</html>
