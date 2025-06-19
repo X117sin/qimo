@@ -593,12 +593,7 @@
                             <span>个人概览</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="#" data-section="notes">
-                            <span class="icon">📝</span>
-                            <span>我的笔记</span>
-                        </a>
-                    </li>
+
                     <li>
                         <a href="/charts.html">
                             <span class="icon">📈</span>
@@ -666,22 +661,7 @@
 
                 </div>
                 
-                <!-- 我的笔记 -->
-                <div id="notes-section" class="dashboard-section hidden">
-                    <h2 class="section-title">
-                        <span class="icon">📝</span>
-                        我的笔记
-                    </h2>
-                    
-                    <div class="notes-grid" id="notesContainer">
-                        <div class="empty-state">
-                            <div class="icon">📝</div>
-                            <h3>正在加载笔记...</h3>
-                            <p>请稍候</p>
-                        </div>
-                    </div>
-                </div>
-                
+
                 <!-- 账户设置 -->
                 <div id="settings-section" class="dashboard-section hidden">
                     <h2 class="section-title">
@@ -758,73 +738,7 @@
         
 
         
-        // 加载用户笔记
-        function loadUserNotes() {
-            if (!checkAuth()) return;
-            
-            const token = localStorage.getItem('token');
-            const notesContainer = document.getElementById('notesContainer');
-            
-            notesContainer.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">📝</div>
-                    <h3>正在加载笔记...</h3>
-                    <p>请稍候</p>
-                </div>
-            `;
-            
-            fetch('/api/notes?page=0&size=10', {
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('获取笔记失败');
-                }
-                return response.json();
-            })
-            .then(data => {
-                notesContainer.innerHTML = '';
-                
-                if (data.notes && data.notes.length > 0) {
-                    data.notes.forEach(note => {
-                        const noteDate = new Date(note.updatedAt || note.createdAt).toLocaleString();
-                        const noteHtml = `
-                            <div class="note-card">
-                                <div class="note-header">
-                                    <div>
-                                        <div class="note-title">${note.passage ? note.passage.title : '未知条文'}</div>
-                                        <div class="note-date">更新于: ${noteDate}</div>
-                                    </div>
-                                </div>
-                                <div class="note-content">${note.content}</div>
-                            </div>
-                        `;
-                        notesContainer.innerHTML += noteHtml;
-                    });
-                } else {
-                    notesContainer.innerHTML = `
-                        <div class="empty-state">
-                            <div class="icon">📝</div>
-                            <h3>暂无笔记</h3>
-                            <p>您还没有创建任何笔记，快去学习并记录您的心得吧！</p>
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                console.error('获取用户笔记失败:', error);
-                notesContainer.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">❌</div>
-                        <h3>加载失败</h3>
-                        <p>获取笔记失败，请稍后再试</p>
-                    </div>
-                `;
-            });
-        }
-        
+
         // 更新用户信息
         document.getElementById('updateProfileForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -903,10 +817,7 @@
                 const sectionId = this.getAttribute('data-section') + '-section';
                 document.getElementById(sectionId).classList.remove('hidden');
                 
-                // 如果是笔记部分，加载笔记
-                if (this.getAttribute('data-section') === 'notes') {
-                    loadUserNotes();
-                }
+
             });
         });
         

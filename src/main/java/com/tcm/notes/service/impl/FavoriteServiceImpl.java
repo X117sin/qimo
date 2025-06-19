@@ -7,7 +7,7 @@ import com.tcm.notes.repository.FavoriteRepository;
 import com.tcm.notes.repository.PassageRepository;
 import com.tcm.notes.repository.UserRepository;
 import com.tcm.notes.service.FavoriteService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,16 +19,12 @@ import java.util.Optional;
  * 收藏服务实现类
  */
 @Service
+@RequiredArgsConstructor
 public class FavoriteServiceImpl implements FavoriteService {
 
-    @Autowired
-    private FavoriteRepository favoriteRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PassageRepository passageRepository;
+    private final FavoriteRepository favoriteRepository;
+    private final UserRepository userRepository;
+    private final PassageRepository passageRepository;
 
     @Override
     @Transactional

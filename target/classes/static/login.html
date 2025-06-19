@@ -380,7 +380,8 @@
                     userObj.role = data.role;
                 }
                 
-                localStorage.setItem('user', JSON.stringify(userObj));
+                localStorage.setItem('userInfo', JSON.stringify(userObj));
+                localStorage.setItem('user', JSON.stringify(userObj)); // 保持兼容性
                 console.log('已保存到localStorage:', {
                     token: data.token,
                     user: userObj

@@ -87,6 +87,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 requestPath.startsWith("/js") || 
                 requestPath.startsWith("/images") || 
                 requestPath.equals("/favicon.ico") ||
+                requestPath.equals("/error") || // 允许访问错误页面
                 requestPath.equals("/health")) {
                 logger.info("跳过公共资源: {}", requestPath);
                 filterChain.doFilter(request, response);

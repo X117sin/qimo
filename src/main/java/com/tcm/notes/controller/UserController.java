@@ -48,9 +48,9 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<User> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = Long.parseLong(authentication.getName());
+        String username = authentication.getName();
         
-        return userRepository.findById(userId)
+        return userRepository.findByUsername(username)
                 .map(user -> {
                     // 出于安全考虑，不返回密码
                     user.setPassword(null);
@@ -67,9 +67,9 @@ public class UserController {
     @PutMapping("/me")
     public ResponseEntity<User> updateCurrentUser(@RequestBody User userDetails) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = Long.parseLong(authentication.getName());
+        String username = authentication.getName();
         
-        return userRepository.findById(userId)
+        return userRepository.findByUsername(username)
                 .map(user -> {
                     // 只允许更新部分字段
                     if (userDetails.getEmail() != null) {

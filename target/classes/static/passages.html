@@ -715,16 +715,16 @@
         document.addEventListener('DOMContentLoaded', function() {
             // 检查用户登录状态
             const token = localStorage.getItem('token');
-            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const userInfoStr = localStorage.getItem('userInfo');
+            const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null;
             
-            if (!token) {
-                // 未登录，跳转到登录页面
-                window.location.href = '/login.html';
-                return;
+            // 显示用户信息（如果已登录）
+            if (token && userInfo) {
+                updateUserDisplay(userInfo);
+            } else {
+                // 未登录时显示默认状态
+                updateUserDisplay(null);
             }
-            
-            // 显示用户信息
-            updateUserDisplay(userInfo);
             
             // 加载条文数据
             loadPassages(currentPage);
@@ -754,14 +754,35 @@
         function updateUserDisplay(userInfo) {
             const usernameElement = document.getElementById('username');
             const userAvatarElement = document.getElementById('userAvatar');
+            const userActionsElement = document.querySelector('.user-actions');
             
-            if (usernameElement && userInfo.username) {
-                usernameElement.textContent = userInfo.username;
-            }
-            
-            if (userAvatarElement && userInfo.username) {
-                // 显示用户名首字母作为头像
-                userAvatarElement.textContent = userInfo.username.charAt(0).toUpperCase();
+            if (userInfo && userInfo.username) {
+                // 已登录状态
+                if (usernameElement) {
+                    usernameElement.textContent = userInfo.username;
+                }
+                if (userAvatarElement) {
+                    userAvatarElement.textContent = userInfo.username.charAt(0).toUpperCase();
+                }
+                // 显示用户操作区域
+                if (userActionsElement) {
+                    userActionsElement.style.display = 'flex';
+                }
+            } else {
+                // 未登录状态
+                if (usernameElement) {
+                    usernameElement.textContent = '未登录';
+                }
+                if (userAvatarElement) {
+                    userAvatarElement.textContent = '?';
+                }
+                // 隐藏退出登录按钮，显示登录按钮
+                if (userActionsElement) {
+                    userActionsElement.innerHTML = `
+                        <a href="/login.html" class="btn btn-primary">登录</a>
+                        <a href="/register.html" class="btn btn-secondary">注册</a>
+                    `;
+                }
             }
         }
         
@@ -1140,9 +1161,21 @@
         function toggleFavorite(event, passageId) {
             event.stopPropagation(); // 阻止事件冒泡，避免触发条文详情
             
-            // 只有登录用户才能收藏
-            if (!isLoggedIn()) {
+            // 检查登录状态
+            const token = localStorage.getItem('token');
+            if (!token) {
                 if (confirm('请先登录后再收藏条文，是否立即登录？')) {
+                    localStorage.setItem('redirectAfterLogin', window.location.href);
+                    redirectToLogin();
+                }
+                return;
+            }
+            
+            // 验证token是否有效（简单检查格式）
+            if (!token.includes('.')) {
+                if (confirm('登录状态异常，请重新登录，是否立即登录？')) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
                     localStorage.setItem('redirectAfterLogin', window.location.href);
                     redirectToLogin();
                 }
@@ -1160,7 +1193,17 @@
                 method: method,
                 headers: getAuthHeaders()
             })
-            .then(response => handleApiResponse(response, isFavorited ? '取消收藏失败' : '收藏失败', true))
+            .then(response => {
+                if (response.status === 401) {
+                    // 认证失败，提示用户重新登录
+                    if (confirm('登录已过期，请重新登录后再试，是否立即登录？')) {
+                        localStorage.setItem('redirectAfterLogin', window.location.href);
+                        redirectToLogin();
+                    }
+                    throw new Error('认证失败');
+                }
+                return handleApiResponse(response, isFavorited ? '取消收藏失败' : '收藏失败', true);
+            })
             .then(data => {
                 // 更新按钮状态
                 updateFavoriteButton(favoriteBtn, !isFavorited);
@@ -1171,20 +1214,26 @@
             })
             .catch(error => {
                 console.error('收藏操作失败:', error);
+                if (error.message === '认证失败') {
+                    return; // 认证失败已经处理过了，不再显示错误提示
+                }
                 showToast(isFavorited ? '取消收藏失败' : '收藏失败', 'error');
             });
         }
         
         // 检查收藏状态
         function checkFavoriteStatus(passageId) {
-            if (!isLoggedIn()) {
-                return;
+            const token = localStorage.getItem('token');
+            if (!token || !token.includes('.')) {
+                return; // 未登录或token无效，跳过检查
             }
             
             fetch(`/api/favorites/check/${passageId}`, {
                 headers: getAuthHeaders()
             })
-            .then(response => handleApiResponse(response, '检查收藏状态失败', true))
+            .then(response => {
+                return handleApiResponse(response, '检查收藏状态失败', true);
+            })
             .then(data => {
                 const favoriteBtn = document.querySelector(`[data-passage-id="${passageId}"]`);
                 if (favoriteBtn) {
@@ -1192,6 +1241,9 @@
                 }
             })
             .catch(error => {
+                if (error.message === '认证失败') {
+                    return; // 认证失败静默处理
+                }
                 console.error('检查收藏状态失败:', error);
             });
         }

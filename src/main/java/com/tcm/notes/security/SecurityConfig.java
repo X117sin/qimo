@@ -58,8 +58,8 @@ public class SecurityConfig {
                 // 明确允许访问passages接口
                 .requestMatchers("/api/public/passages").permitAll()
                 .requestMatchers("/api/public/passages/**").permitAll()
-                // 允许访问静态资源
-                .requestMatchers("/", "/index.html", "/login.html", "/register.html", "/passages.html", "/create-admin.html", "/admin-check.html", "/static/**", "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                // 允许访问静态资源和错误页面
+                .requestMatchers("/", "/index.html", "/login.html", "/register.html", "/passages.html", "/create-admin.html", "/admin-check.html", "/static/**", "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico", "/error").permitAll()
                 // 管理员页面和用户中心页面先允许访问静态资源，权限控制由前端和API请求时进行
                 .requestMatchers("/admin-dashboard.html", "/admin-simple.html", "/dashboard.html", "/charts.html", "/notes.html").permitAll()
                 // API请求时进行权限控制

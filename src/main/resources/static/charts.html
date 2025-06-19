@@ -4,7 +4,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>学习统计图表 - 中医方证速查与笔记系统</title>
+    <!-- 使用官方推荐的CDN源加载Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        console.log('页面开始加载，Chart.js状态:', typeof Chart);
+        
+        // 页面加载完成后的处理
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM加载完成');
+            console.log('Chart.js状态:', typeof Chart);
+            
+            // 延迟检查Chart.js加载状态，给更多时间加载
+            setTimeout(function() {
+                checkAndInitializeCharts();
+            }, 500); // 增加延迟到500ms
+        });
+        
+        // 检查并初始化图表
+        function checkAndInitializeCharts() {
+            console.log('检查Chart.js状态:', typeof Chart);
+            
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js未加载，尝试备用CDN');
+                loadChartJSBackup();
+            } else {
+                console.log('Chart.js已加载，开始加载统计数据');
+                initializeCharts();
+            }
+        }
+        
+        // 使用备用CDN加载Chart.js
+        function loadChartJSBackup() {
+            console.log('开始使用备用CDN加载Chart.js...');
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.6/chart.min.js';
+            
+            script.onload = function() {
+                console.log('备用CDN Chart.js加载成功');
+                console.log('Chart对象:', typeof Chart);
+                // 再次延迟确保完全加载
+                setTimeout(function() {
+                    if (typeof Chart !== 'undefined') {
+                        initializeCharts();
+                    } else {
+                        tryFinalBackup();
+                    }
+                }, 300);
+            };
+            
+            script.onerror = function() {
+                console.error('备用CDN也失败，尝试最后的备用方案');
+                tryFinalBackup();
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        // 最后的备用方案
+        function tryFinalBackup() {
+            console.log('尝试最后的备用CDN...');
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/chart.js@4.4.6/dist/chart.min.js';
+            
+            script.onload = function() {
+                console.log('最后备用CDN加载成功');
+                setTimeout(function() {
+                    if (typeof Chart !== 'undefined') {
+                        initializeCharts();
+                    } else {
+                        showChartError();
+                    }
+                }, 500);
+            };
+            
+            script.onerror = function() {
+                console.error('所有CDN都失败');
+                showChartError();
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        // 初始化图表
+        function initializeCharts() {
+            console.log('开始初始化图表，Chart状态:', typeof Chart);
+            if (typeof Chart !== 'undefined') {
+                loadStatistics();
+            } else {
+                console.error('Chart仍然未定义');
+                showChartError();
+            }
+        }
+        
+        // 显示图表加载错误
+        function showChartError() {
+            console.error('显示图表加载错误页面');
+            const container = document.querySelector('.container');
+            if (container) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: #666;">
+                        <h2>📊 图表库加载失败</h2>
+                        <p>无法加载Chart.js图表库，请检查网络连接。</p>
+                        <p>当前Chart.js状态: ${typeof Chart}</p>
+                        <button onclick="location.reload()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px;">重新加载</button>
+                    </div>
+                `;
+            }
+        }
+    </script>
     <style>
         * {
             margin: 0;
@@ -314,8 +421,16 @@
                 }
                 
                 const data = await response.json();
+                console.log('获取到统计数据:', data);
+                
+                // 保存数据到全局变量
+                window.statisticsData = data;
+                
                 updateStatistics(data);
+                
+                // 直接创建图表，因为Chart.js已经在调用此函数前加载完成
                 createCharts(data);
+                
             } catch (error) {
                 console.error('加载统计数据失败:', error);
                 alert('加载统计数据失败，请稍后再试');
@@ -332,47 +447,94 @@
 
         // 创建图表
         function createCharts(data) {
-            createProgressChart(data);
-            createActivityChart(data);
-            createTimeChart(data);
-            createAchievementChart(data);
+            console.log('开始创建图表，Chart状态:', typeof Chart);
+            
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js 未加载，无法创建图表');
+                showChartError();
+                return;
+            }
+            
+            try {
+                console.log('Chart.js可用，开始创建各个图表');
+                
+                // 逐个创建图表，增加错误处理
+                setTimeout(() => createProgressChart(data), 100);
+                setTimeout(() => createActivityChart(data), 200);
+                setTimeout(() => createTimeChart(data), 300);
+                setTimeout(() => createAchievementChart(data), 400);
+                
+            } catch (error) {
+                console.error('创建图表时出错:', error);
+                const chartsGrid = document.querySelector('.charts-grid');
+                if (chartsGrid) {
+                    chartsGrid.innerHTML = `
+                        <div style="text-align: center; padding: 50px; color: #666; grid-column: 1 / -1;">
+                            <h3>📊 图表创建失败</h3>
+                            <p>创建图表时发生错误，请刷新页面重试。</p>
+                            <p style="font-size: 12px; color: #999;">错误信息: ${error.message}</p>
+                            <button onclick="location.reload()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">刷新页面</button>
+                        </div>
+                    `;
+                }
+            }
         }
 
         // 学习进度饼图
         function createProgressChart(data) {
-            const ctx = document.getElementById('progressChart').getContext('2d');
-            const studiedCount = data.studiedCount || 0;
-            const totalPassages = data.totalPassages || 1;
-            const remainingCount = Math.max(0, totalPassages - studiedCount);
-            
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['已学习', '未学习'],
-                    datasets: [{
-                        data: [studiedCount, remainingCount],
-                        backgroundColor: [
-                            '#4CAF50',
-                            '#E0E0E0'
-                        ],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
+            try {
+                console.log('创建学习进度图表');
+                const canvas = document.getElementById('progressChart');
+                if (!canvas) {
+                    console.error('找不到progressChart画布元素');
+                    return;
+                }
+                
+                const ctx = canvas.getContext('2d');
+                const studiedCount = data.studiedCount || 0;
+                const totalPassages = data.totalPassages || 1;
+                const remainingCount = Math.max(0, totalPassages - studiedCount);
+                
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['已学习', '未学习'],
+                        datasets: [{
+                            data: [studiedCount, remainingCount],
+                            backgroundColor: [
+                                '#4CAF50',
+                                '#E0E0E0'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
                         }
                     }
-                }
-            });
+                });
+                console.log('学习进度图表创建成功');
+            } catch (error) {
+                console.error('创建学习进度图表失败:', error);
+            }
         }
 
         // 学习活动柱状图
         function createActivityChart(data) {
-            const ctx = document.getElementById('activityChart').getContext('2d');
+            try {
+                console.log('创建学习活动图表');
+                const canvas = document.getElementById('activityChart');
+                if (!canvas) {
+                    console.error('找不到activityChart画布元素');
+                    return;
+                }
+                
+                const ctx = canvas.getContext('2d');
             
             new Chart(ctx, {
                 type: 'bar',
@@ -410,27 +572,39 @@
                     }
                 }
             });
+                console.log('学习活动图表创建成功');
+            } catch (error) {
+                console.error('创建学习活动图表失败:', error);
+            }
         }
 
         // 学习时长线图
         function createTimeChart(data) {
-            const ctx = document.getElementById('timeChart').getContext('2d');
-            const totalTime = data.totalStudyTime || 0;
-            const studyDays = data.studyDays || 1;
-            const avgTimePerDay = Math.round(totalTime / studyDays);
-            
-            // 模拟最近7天的学习时长数据
-            const last7Days = [];
-            const timeData = [];
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                last7Days.push(date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }));
-                // 模拟数据，实际应该从后端获取
-                timeData.push(Math.max(0, avgTimePerDay + Math.random() * 20 - 10));
-            }
-            
-            new Chart(ctx, {
+            try {
+                console.log('创建学习时长图表');
+                const canvas = document.getElementById('timeChart');
+                if (!canvas) {
+                    console.error('找不到timeChart画布元素');
+                    return;
+                }
+                
+                const ctx = canvas.getContext('2d');
+                const totalTime = data.totalStudyTime || 0;
+                const studyDays = data.studyDays || 1;
+                const avgTimePerDay = Math.round(totalTime / studyDays);
+                
+                // 模拟最近7天的学习时长数据
+                const last7Days = [];
+                const timeData = [];
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    last7Days.push(date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }));
+                    // 模拟数据，实际应该从后端获取
+                    timeData.push(Math.max(0, avgTimePerDay + Math.random() * 20 - 10));
+                }
+                
+                new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: last7Days,
@@ -458,21 +632,33 @@
                     }
                 }
             });
+                console.log('学习时长图表创建成功');
+            } catch (error) {
+                console.error('创建学习时长图表失败:', error);
+            }
         }
 
         // 学习成果雷达图
         function createAchievementChart(data) {
-            const ctx = document.getElementById('achievementChart').getContext('2d');
-            const totalPassages = data.totalPassages || 1;
-            
-            // 计算各项指标的百分比
-            const progressPercent = Math.min(100, (data.studiedCount || 0) / totalPassages * 100);
-            const notesPercent = Math.min(100, (data.notesCount || 0) / 50 * 100); // 假设50为满分
-            const favoritesPercent = Math.min(100, (data.favoritesCount || 0) / 20 * 100); // 假设20为满分
-            const timePercent = Math.min(100, (data.totalStudyTime || 0) / 300 * 100); // 假设300分钟为满分
-            const daysPercent = Math.min(100, (data.studyDays || 0) / 30 * 100); // 假设30天为满分
-            
-            new Chart(ctx, {
+            try {
+                console.log('创建学习成果图表');
+                const canvas = document.getElementById('achievementChart');
+                if (!canvas) {
+                    console.error('找不到achievementChart画布元素');
+                    return;
+                }
+                
+                const ctx = canvas.getContext('2d');
+                const totalPassages = data.totalPassages || 1;
+                
+                // 计算各项指标的百分比
+                const progressPercent = Math.min(100, (data.studiedCount || 0) / totalPassages * 100);
+                const notesPercent = Math.min(100, (data.notesCount || 0) / 50 * 100); // 假设50为满分
+                const favoritesPercent = Math.min(100, (data.favoritesCount || 0) / 20 * 100); // 假设20为满分
+                const timePercent = Math.min(100, (data.totalStudyTime || 0) / 300 * 100); // 假设300分钟为满分
+                const daysPercent = Math.min(100, (data.studyDays || 0) / 30 * 100); // 假设30天为满分
+                
+                new Chart(ctx, {
                 type: 'radar',
                 data: {
                     labels: ['学习进度', '笔记数量', '收藏条文', '学习时长', '学习天数'],
@@ -503,12 +689,29 @@
                     }
                 }
             });
+                console.log('学习成果图表创建成功');
+            } catch (error) {
+                console.error('创建学习成果图表失败:', error);
+            }
         }
 
-        // 页面加载时执行
-        document.addEventListener('DOMContentLoaded', function() {
-            loadStatistics();
-        });
+        // 检查Chart.js是否加载成功
+        function checkChartJS() {
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js 未能正确加载');
+                document.querySelector('.container').innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: #666;">
+                        <h2>📊 图表加载失败</h2>
+                        <p>Chart.js 库未能正确加载，请检查网络连接或刷新页面重试。</p>
+                        <button onclick="location.reload()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px;">刷新页面</button>
+                    </div>
+                `;
+                return false;
+            }
+            return true;
+        }
+
+        // 注意：DOMContentLoaded 事件监听器已在上面的脚本中处理
     </script>
 </body>
 </html>
