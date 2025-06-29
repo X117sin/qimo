@@ -580,9 +580,10 @@
             `;
             
             let url = `/api/notes?page=${page}&size=12`;
-            if (search) {
-                url += `&search=${encodeURIComponent(search)}`;
-            }
+            // 注意：后端暂不支持search参数，先移除
+            // if (search) {
+            //     url += `&search=${encodeURIComponent(search)}`;
+            // }
             
             fetch(url, {
                 headers: {
@@ -755,7 +756,21 @@
         // 搜索笔记
         function searchNotes() {
             const searchTerm = document.getElementById('searchInput').value.trim();
-            loadUserNotes(0, searchTerm);
+            if (!searchTerm) {
+                // 如果搜索词为空，显示所有笔记
+                displayNotes(allNotes);
+                return;
+            }
+            
+            // 在前端进行搜索过滤
+            const filteredNotes = allNotes.filter(note => {
+                const content = note.content ? note.content.toLowerCase() : '';
+                const passageTitle = note.passage && note.passage.title ? note.passage.title.toLowerCase() : '';
+                const searchLower = searchTerm.toLowerCase();
+                return content.includes(searchLower) || passageTitle.includes(searchLower);
+            });
+            
+            displayNotes(filteredNotes);
         }
 
         // 退出登录

@@ -15,6 +15,7 @@ F:\Idea\qimo\src\main\java\com\tcm\notes\service\impl\WrongAnswerServiceImpl.jav
 F:\Idea\qimo\src\main\java\com\tcm\notes\entity\Favorite.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\service\WrongAnswerService.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\controller\PassageController.java
+F:\Idea\qimo\src\main\java\com\tcm\notes\util\PasswordGenerator.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\controller\WrongAnswerController.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\repository\PassageRepository.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\controller\AdminController.java
@@ -23,8 +24,10 @@ F:\Idea\qimo\src\main\java\com\tcm\notes\service\StudyRecordService.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\repository\StudyRecordRepository.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\service\impl\PassageServiceImpl.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\service\FavoriteService.java
+F:\Idea\qimo\src\main\java\com\tcm\notes\util\TestPasswordMatch.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\controller\FavoriteController.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\repository\FavoriteRepository.java
+F:\Idea\qimo\src\main\java\GenerateHash.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\entity\Note.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\security\SecurityConfig.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\entity\User.java

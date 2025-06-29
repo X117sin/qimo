@@ -46,9 +46,27 @@ public class NoteController {
     public ResponseEntity<?> createNote(@RequestBody Map<String, Object> noteRequest) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            String authName = authentication.getName();
+            
+            // 由于JWT中存储的是用户ID，authentication.getName()可能返回用户ID或用户名
+            // 我们需要同时尝试两种方式来查找用户
+            User user = null;
+            try {
+                // 首先尝试按用户名查找
+                user = userRepository.findByUsername(authName).orElse(null);
+                if (user == null) {
+                    // 如果按用户名找不到，尝试按ID查找
+                    Long userId = Long.parseLong(authName);
+                    user = userRepository.findById(userId).orElse(null);
+                }
+            } catch (NumberFormatException e) {
+                // 如果不是数字，只按用户名查找
+                user = userRepository.findByUsername(authName).orElse(null);
+            }
+            
+            if (user == null) {
+                throw new RuntimeException("用户不存在: " + authName);
+            }
 
             Long passageId = Long.valueOf(noteRequest.get("passageId").toString());
             Passage passage = passageRepository.findById(passageId)
@@ -81,9 +99,27 @@ public class NoteController {
 
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            String authName = authentication.getName();
+            
+            // 由于JWT中存储的是用户ID，authentication.getName()可能返回用户ID或用户名
+            // 我们需要同时尝试两种方式来查找用户
+            User user = null;
+            try {
+                // 首先尝试按用户名查找
+                user = userRepository.findByUsername(authName).orElse(null);
+                if (user == null) {
+                    // 如果按用户名找不到，尝试按ID查找
+                    Long userId = Long.parseLong(authName);
+                    user = userRepository.findById(userId).orElse(null);
+                }
+            } catch (NumberFormatException e) {
+                // 如果不是数字，只按用户名查找
+                user = userRepository.findByUsername(authName).orElse(null);
+            }
+            
+            if (user == null) {
+                throw new RuntimeException("用户不存在: " + authName);
+            }
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "updatedAt"));
             Page<Note> notes = noteService.findByUserId(user.getId(), pageable);
@@ -92,7 +128,16 @@ public class NoteController {
             response.put("notes", notes.getContent());
             response.put("currentPage", notes.getNumber());
             response.put("totalItems", notes.getTotalElements());
+            response.put("totalElements", notes.getTotalElements()); // 前端期望的字段
             response.put("totalPages", notes.getTotalPages());
+            
+            // 计算本月笔记数量
+            long thisMonthCount = noteService.countThisMonthNotes(user.getId());
+            response.put("thisMonthCount", thisMonthCount);
+            
+            // 计算最近笔记数量（最近7天）
+            long recentCount = noteService.countRecentNotes(user.getId());
+            response.put("recentCount", recentCount);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -109,9 +154,27 @@ public class NoteController {
     public ResponseEntity<?> getNoteById(@PathVariable Long id) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            String authName = authentication.getName();
+            
+            // 由于JWT中存储的是用户ID，authentication.getName()可能返回用户ID或用户名
+            // 我们需要同时尝试两种方式来查找用户
+            User user = null;
+            try {
+                // 首先尝试按用户名查找
+                user = userRepository.findByUsername(authName).orElse(null);
+                if (user == null) {
+                    // 如果按用户名找不到，尝试按ID查找
+                    Long userId = Long.parseLong(authName);
+                    user = userRepository.findById(userId).orElse(null);
+                }
+            } catch (NumberFormatException e) {
+                // 如果不是数字，只按用户名查找
+                user = userRepository.findByUsername(authName).orElse(null);
+            }
+            
+            if (user == null) {
+                throw new RuntimeException("用户不存在: " + authName);
+            }
 
             Note note = noteService.findById(id)
                     .orElseThrow(() -> new RuntimeException("笔记不存在"));
@@ -136,9 +199,27 @@ public class NoteController {
     public ResponseEntity<?> getNotesByPassageId(@PathVariable Long passageId) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            String authName = authentication.getName();
+            
+            // 由于JWT中存储的是用户ID，authentication.getName()可能返回用户ID或用户名
+            // 我们需要同时尝试两种方式来查找用户
+            User user = null;
+            try {
+                // 首先尝试按用户名查找
+                user = userRepository.findByUsername(authName).orElse(null);
+                if (user == null) {
+                    // 如果按用户名找不到，尝试按ID查找
+                    Long userId = Long.parseLong(authName);
+                    user = userRepository.findById(userId).orElse(null);
+                }
+            } catch (NumberFormatException e) {
+                // 如果不是数字，只按用户名查找
+                user = userRepository.findByUsername(authName).orElse(null);
+            }
+            
+            if (user == null) {
+                throw new RuntimeException("用户不存在: " + authName);
+            }
 
             List<Note> notes = noteService.findByPassageIdAndUserId(passageId, user.getId());
             return ResponseEntity.ok(notes);
@@ -157,9 +238,27 @@ public class NoteController {
     public ResponseEntity<?> updateNote(@PathVariable Long id, @RequestBody Map<String, Object> noteRequest) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            String authName = authentication.getName();
+            
+            // 由于JWT中存储的是用户ID，authentication.getName()可能返回用户ID或用户名
+            // 我们需要同时尝试两种方式来查找用户
+            User user = null;
+            try {
+                // 首先尝试按用户名查找
+                user = userRepository.findByUsername(authName).orElse(null);
+                if (user == null) {
+                    // 如果按用户名找不到，尝试按ID查找
+                    Long userId = Long.parseLong(authName);
+                    user = userRepository.findById(userId).orElse(null);
+                }
+            } catch (NumberFormatException e) {
+                // 如果不是数字，只按用户名查找
+                user = userRepository.findByUsername(authName).orElse(null);
+            }
+            
+            if (user == null) {
+                throw new RuntimeException("用户不存在: " + authName);
+            }
 
             Note existingNote = noteService.findById(id)
                     .orElseThrow(() -> new RuntimeException("笔记不存在"));
@@ -188,9 +287,27 @@ public class NoteController {
     public ResponseEntity<?> deleteNote(@PathVariable Long id) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            String authName = authentication.getName();
+            
+            // 由于JWT中存储的是用户ID，authentication.getName()可能返回用户ID或用户名
+            // 我们需要同时尝试两种方式来查找用户
+            User user = null;
+            try {
+                // 首先尝试按用户名查找
+                user = userRepository.findByUsername(authName).orElse(null);
+                if (user == null) {
+                    // 如果按用户名找不到，尝试按ID查找
+                    Long userId = Long.parseLong(authName);
+                    user = userRepository.findById(userId).orElse(null);
+                }
+            } catch (NumberFormatException e) {
+                // 如果不是数字，只按用户名查找
+                user = userRepository.findByUsername(authName).orElse(null);
+            }
+            
+            if (user == null) {
+                throw new RuntimeException("用户不存在: " + authName);
+            }
 
             Note note = noteService.findById(id)
                     .orElseThrow(() -> new RuntimeException("笔记不存在"));

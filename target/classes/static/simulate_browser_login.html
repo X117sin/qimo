@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>模拟浏览器登录</title>
+</head>
+<body>
+    <h1>模拟浏览器登录</h1>
+    <button onclick="simulateLogin()">执行登录</button>
+    <button onclick="checkStorage()">检查存储</button>
+    <button onclick="testNotesAPI()">测试笔记API</button>
+    <div id="result"></div>
+
+    <script>
+        function simulateLogin() {
+            // 模拟登录响应数据
+            const loginResponse = {
+                "role": "ADMIN",
+                "user": {
+                    "id": 1,
+                    "username": "admin",
+                    "password": "$2a$10$nVkCX83ckgXbVhEWbK86.efy7pBMpj0A8sN5.A4XWsnmctKmiwC7W",
+                    "email": "111@222.com",
+                    "role": "ADMIN",
+                    "createdAt": "2025-05-17T22:25:40",
+                    "updatedAt": "2025-05-17T22:25:40"
+                },
+                "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzUwMzI4NDk5LCJleHAiOjE3NTU1MTI0OTl9.hDO8aFI4ZPE3ER9Hrq5XOhH06N0R8EADGUSd7bORtgk"
+            };
+
+            // 保存到localStorage
+            localStorage.setItem('token', loginResponse.token);
+            localStorage.setItem('user', JSON.stringify(loginResponse.user));
+            localStorage.setItem('userInfo', JSON.stringify(loginResponse.user));
+            
+            document.getElementById('result').innerHTML = '<p style="color: green;">登录信息已保存到localStorage</p>';
+        }
+
+        function checkStorage() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            const userInfo = localStorage.getItem('userInfo');
+            
+            document.getElementById('result').innerHTML = `
+                <h3>localStorage内容:</h3>
+                <p><strong>Token:</strong> ${token ? '已设置' : '未设置'}</p>
+                <p><strong>User:</strong> ${user ? '已设置' : '未设置'}</p>
+                <p><strong>UserInfo:</strong> ${userInfo ? '已设置' : '未设置'}</p>
+                <pre>${JSON.stringify({token, user, userInfo}, null, 2)}</pre>
+            `;
+        }
+
+        function testNotesAPI() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                document.getElementById('result').innerHTML = '<p style="color: red;">请先执行登录</p>';
+                return;
+            }
+
+            fetch('/api/notes', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('result').innerHTML = `
+                    <h3>API测试成功:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = `
+                    <h3>API测试失败:</h3>
+                    <p style="color: red;">${error.message}</p>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

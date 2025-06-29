@@ -8,6 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -65,5 +67,34 @@ public class NoteServiceImpl implements NoteService {
     @Override
     public long countByUserId(Long userId) {
         return noteRepository.findByUserId(userId, Pageable.unpaged()).getTotalElements();
+    }
+    
+    @Override
+    public long countThisMonthNotes(Long userId) {
+        LocalDateTime startOfMonth = LocalDateTime.now().with(TemporalAdjusters.firstDayOfMonth()).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime endOfMonth = LocalDateTime.now().with(TemporalAdjusters.lastDayOfMonth()).withHour(23).withMinute(59).withSecond(59).withNano(999999999);
+        
+        return noteRepository.findByUserId(userId, Pageable.unpaged())
+                .getContent()
+                .stream()
+                .filter(note -> {
+                    LocalDateTime createdAt = note.getCreatedAt();
+                    return createdAt != null && createdAt.isAfter(startOfMonth) && createdAt.isBefore(endOfMonth);
+                })
+                .count();
+    }
+    
+    @Override
+    public long countRecentNotes(Long userId) {
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        
+        return noteRepository.findByUserId(userId, Pageable.unpaged())
+                .getContent()
+                .stream()
+                .filter(note -> {
+                    LocalDateTime createdAt = note.getCreatedAt();
+                    return createdAt != null && createdAt.isAfter(sevenDaysAgo);
+                })
+                .count();
     }
 }

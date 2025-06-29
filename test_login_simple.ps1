@@ -4,10 +4,10 @@ $headers = @{
     'Content-Type' = 'application/json'
 }
 
-# 测试admin用户登录
+# 测试testuser用户登录
 $body = @{
-    username = "admin"
-    password = "admin123"
+    username = "testuser"
+    password = "test123"
 } | ConvertTo-Json
 
 Write-Host "Testing login API at: $uri"

@@ -69,4 +69,18 @@ public interface NoteService {
      * @return 笔记数量
      */
     long countByUserId(Long userId);
+    
+    /**
+     * 统计用户本月笔记数量
+     * @param userId 用户ID
+     * @return 本月笔记数量
+     */
+    long countThisMonthNotes(Long userId);
+    
+    /**
+     * 统计用户最近笔记数量（最近7天）
+     * @param userId 用户ID
+     * @return 最近笔记数量
+     */
+    long countRecentNotes(Long userId);
 }
