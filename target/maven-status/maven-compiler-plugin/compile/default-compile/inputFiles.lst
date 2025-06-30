@@ -34,6 +34,7 @@ F:\Idea\qimo\src\main\java\com\tcm\notes\entity\User.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\dto\WrongAnswerDTO.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\entity\Passage.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\repository\NoteRepository.java
+F:\Idea\qimo\src\main\java\com\tcm\notes\util\PasswordHashGenerator.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\controller\TestController.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\security\CustomUserDetailsService.java
 F:\Idea\qimo\src\main\java\com\tcm\notes\config\DataSourceConfig.java

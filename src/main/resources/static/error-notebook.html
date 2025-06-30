@@ -587,7 +587,17 @@
                 method: 'GET',
                 headers: getAuthHeaders()
             })
-            .then(response => handleApiResponse(response, '获取错题记录失败'))
+            .then(response => {
+                if (!response.ok) {
+                    // 尝试解析错误响应
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.error || '获取错题记录失败');
+                    }).catch(() => {
+                        throw new Error('获取错题记录失败');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 // 更新当前页码和总页数
                 currentPage = data.currentPage;
@@ -601,8 +611,20 @@
             })
             .catch(error => {
                 console.error('获取错题记录失败:', error);
-                errorList.innerHTML = `<div class="empty-state">获取错题记录失败: ${error.message}</div>`;
-                handleApiError(error, '获取错题记录失败');
+                errorList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <div class="empty-title">加载失败</div>
+                        <div class="empty-description">${error.message}</div>
+                        <button class="btn btn-primary" onclick="loadWrongAnswers(0, ${pageSize})">🔄 重新加载</button>
+                    </div>
+                `;
+                // 如果是认证错误，跳转到登录页面
+                if (error.message.includes('登录已过期') || error.message.includes('认证失败')) {
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000);
+                }
             });
         }
     
