@@ -1,1 +1,0 @@
-SELECT id, username, email, role FROM users;
